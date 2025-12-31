@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import LocationInput from './LocationInput';
 import { useState } from 'react';
-import { BACKEND_URL } from '@env';
+import API from '../api/routes';
 
 type Location = {
   name: string;
@@ -47,19 +47,21 @@ export default function MultiLocationInputs() {
     setSendResult(null);
     setSending(true);
     try {
-      const url = BACKEND_URL ?? 'http://localhost:3000/locations';
-      const res = await fetch(url, {
+      const res = await fetch(API?.POST_LOCATION, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locations: coords }),
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => null);
       if (!res.ok) {
-        setSendError(json?.error || JSON.stringify(json));
+        const serverMsg = json?.error || JSON.stringify(json) || res.statusText;
+        setSendError(`HTTP ${res.status}: ${serverMsg}`);
       } else {
         setSendResult('Successfully sent ' + coords.length + ' locations');
       }
     } catch (err: any) {
+      // Log full error to console for debugging on the device/emulator
+      console.error('sendLocationsToBackend error:', err);
       setSendError(err?.message ?? String(err));
     } finally {
       setSending(false);

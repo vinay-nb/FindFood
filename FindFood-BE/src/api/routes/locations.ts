@@ -1,12 +1,12 @@
-import express from 'express';
+import express from "express";
+import { handleLocations } from "../controllers/locationsController";
 
 const router = express.Router();
 
-const handleLocations = (req: express.Request, res: express.Response) => {
-  // TODO: replace this stub with the actual controller implementation
-  res.status(200).json({ message: 'handleLocations stub' });
-};
-
-router.post('/', handleLocations);
+// Register routes relative to the mount path. The router is mounted as
+// e.g. app.use(ROUTES.LOCATIONS, locationsRouter) so here we expose POST '/'.
+router.post("/", (req: express.Request, res: express.Response) => {
+  return handleLocations(req, res);
+});
 
 export default router;
