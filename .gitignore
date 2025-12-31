@@ -76,3 +76,7 @@ yarn-error.log
 
 # env
 .env
+
+# package locks
+package-lock.json
+yarn.lock
