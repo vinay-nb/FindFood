@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import LocationInput from './LocationInput';
 import { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import API from '../api/routes';
 
 type Location = {
@@ -18,6 +19,7 @@ export default function MultiLocationInputs() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const navigation = useNavigation<any>();
 
   function updateLocationAt(index: number, value: Location | null) {
     setLocations(prev => {
@@ -58,6 +60,12 @@ export default function MultiLocationInputs() {
         setSendError(`HTTP ${res.status}: ${serverMsg}`);
       } else {
         setSendResult('Successfully sent ' + coords.length + ' locations');
+        const validResults = json.results.filter(
+          (r: any) => r.totalScore !== Infinity,
+        );
+
+        // Navigate to the Results Screen and pass the data
+        navigation.navigate('Results', { recommendations: validResults });
       }
     } catch (err: any) {
       // Log full error to console for debugging on the device/emulator

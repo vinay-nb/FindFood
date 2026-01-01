@@ -6,8 +6,8 @@ export const ROUTES = {
 
   THIRD_PARTY: {
     SEARCH_NEARBY: "https://places.googleapis.com/v1/places:searchNearby",
-    DISTANCE_MATRIX: "https://maps.googleapis.com/maps/api/distancematrix/json",
+    DISTANCE_MATRIX:
+      "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix",
   },
 };
-
 export default ROUTES;
