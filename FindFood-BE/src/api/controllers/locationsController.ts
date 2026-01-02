@@ -245,8 +245,6 @@ export async function handleLocations(req: any, res: any) {
       .filter((r: Places) => r.totalScore !== Infinity)
       .sort((a: Places, b: Places) => a.totalScore - b.totalScore);
 
-    console.log(finalRecommendation, "finalRecommendation");
-
     return res.json({
       centroid,
       recommendations: finalRecommendation,
