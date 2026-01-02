@@ -60,7 +60,8 @@ export default function MultiLocationInputs() {
         setSendError(`HTTP ${res.status}: ${serverMsg}`);
       } else {
         setSendResult('Successfully sent ' + coords.length + ' locations');
-        const validResults = json.results.filter(
+        console.log(json, "response from backend");
+        const validResults = json.recommendations.filter(
           (r: any) => r.totalScore !== Infinity,
         );
 

@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import ResultsScreen from './src/components/ResultsScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import PlaceDetailScreen from './src/components/PlaceDetailsScreen';
 
 const Stack = createStackNavigator();
 
@@ -35,6 +36,13 @@ function App() {
               name="Results"
               component={ResultsScreen}
               options={{ title: 'Fairness Rankings' }}
+            />
+            <Stack.Screen
+              name="PlaceDetail"
+              component={PlaceDetailScreen}
+              options={{
+                headerShown: false,
+              }}
             />
           </Stack.Navigator>
         </NavigationContainer>
