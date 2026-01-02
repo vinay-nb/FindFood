@@ -78,11 +78,11 @@ yarn-error.log
 .env
 
 # package locks
-/findfood-fe/package-lock.json
-/findfood-fe/yarn.lock
-/findfood-be/package-lock.json
-/findfood-be/yarn.lock
+/FindFood-FE/package-lock.json
+/FindFood-FE/yarn.lock
+/FindFood-BE/package-lock.json
+/FindFood-BE/yarn.lock
 
 #BE
 #build files
-/FindFood-be/dist/
+/FindFood-BE/dist/
