@@ -12,6 +12,7 @@ import {
   Platform,
   UIManager,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GOOGLE_API_KEY as KEY } from '@env';
 import API from '../api/routes';
 import { useNavigation } from '@react-navigation/native';
@@ -59,6 +60,7 @@ interface Details {
 export default function ResultsScreen({ route }: any) {
   const { recommendations } = route.params;
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [expandedDescriptions, setExpandedDescriptions] = useState<
     Record<string, boolean>
   >({});
@@ -217,18 +219,45 @@ export default function ResultsScreen({ route }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.headerTitleContainer}>
-        <Text style={styles.title}>Best Midway Spots</Text>
-        <Text style={styles.subtitle}>
-          {recommendations.length} curated matches for your group
-        </Text>
+      <View
+        style={[
+          styles.customHeader,
+          {
+            paddingTop:
+              Platform.OS === 'ios'
+                ? insets.top
+                : (StatusBar.currentHeight || 0) + 10,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitleText}>Fairness Rankings</Text>
+        <View style={{ width: 40 }} />
       </View>
       <FlatList
         data={recommendations}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
+        // Add top padding so the first card isn't hidden under the header
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 40,
+          paddingTop: Platform.OS === 'ios' ? insets.top + 60 : 80,
+        }}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={() => (
+          <View style={styles.listHeaderPadding}>
+            <Text style={styles.mainTitle}>Best Midway Spots</Text>
+            <Text style={styles.subtitle}>
+              {recommendations.length} curated matches for your group
+            </Text>
+          </View>
+        )}
       />
     </View>
   );
@@ -236,13 +265,60 @@ export default function ResultsScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FB' },
-  headerTitleContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    marginBottom: 10,
+
+  // Custom Header Styles
+  customHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    backgroundColor: 'rgba(248, 249, 251, 0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5EA',
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  backIcon: { fontSize: 22, color: '#1C1C1E', fontWeight: '600' },
+  headerTitleText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1C1C1E',
+  },
+
+  // List Typography
+  listHeaderPadding: {
+    marginBottom: 20,
+  },
+  mainTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1C1C1E',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#8E8E93',
+    marginTop: 4,
+  },
+
   title: { fontSize: 28, fontWeight: '800', color: '#1C1C1E' },
-  subtitle: { fontSize: 14, color: '#8E8E93', marginTop: 4 },
+
   card: {
     backgroundColor: '#FFF',
     borderRadius: 24,
@@ -257,7 +333,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  expandedCard: { borderColor: '#007AFF', borderWidth: 2 },
   imageContainer: { width: '100%', height: 200 },
   coverImage: { width: '100%', height: '100%' },
   placeholderImage: {

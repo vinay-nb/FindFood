@@ -1,8 +1,20 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import LocationInput from './LocationInput';
-import { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  ImageBackground,
+  FlatList,
+  StatusBar,
+  Platform,
+  KeyboardAvoidingView,
+  LayoutAnimation,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import LocationInput from './LocationInput';
 import API from '../api/routes';
 
 type Location = {
@@ -11,128 +23,303 @@ type Location = {
   lng: number;
 };
 
+type LocationEntry = {
+  id: string;
+  data: Location | null;
+};
+
 export default function MultiLocationInputs() {
-  const [locations, setLocations] = useState<Array<Location | null>>([
-    null,
-    null,
+  const [locations, setLocations] = useState<LocationEntry[]>([
+    { id: Math.random().toString(), data: null },
+    { id: Math.random().toString(), data: null },
   ]);
   const [sending, setSending] = useState(false);
-  const [sendResult, setSendResult] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
 
-  function updateLocationAt(index: number, value: Location | null) {
-    setLocations(prev => {
-      const copy = [...prev];
-      copy[index] = value;
-      return copy;
-    });
+  function updateLocationAt(id: string, value: Location | null) {
+    setLocations(prev =>
+      prev.map(loc => (loc.id === id ? { ...loc, data: value } : loc)),
+    );
   }
 
   function addLocationInput() {
-    setLocations(prev => [...prev, null]);
+    setLocations(prev => [
+      ...prev,
+      { id: Math.random().toString(), data: null },
+    ]);
   }
 
-  function removeLocationInput(index: number) {
-    setLocations(prev => prev.filter((_, i) => i !== index));
+  function removeLocationInput(id: string) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setLocations(prev => prev.filter(loc => loc.id !== id));
   }
 
   async function sendLocationsToBackend() {
     const coords = locations
-      .filter(Boolean)
-      .map(l => ({ lat: (l as Location).lat, lng: (l as Location).lng }));
-    if (coords.length === 0) {
-      setSendError('Select at least one location before sending.');
+      .filter(loc => loc.data !== null)
+      .map(loc => ({
+        lat: loc.data!.lat,
+        lng: loc.data!.lng,
+      }));
+
+    if (coords.length < 2) {
+      setSendError('Please add at least 2 people to find a midway spot.');
       return;
     }
+
     setSendError(null);
-    setSendResult(null);
     setSending(true);
+
     try {
       const res = await fetch(API?.POST_LOCATION, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locations: coords }),
       });
-      const json = await res.json().catch(() => null);
+      const json = await res.json();
+
       if (!res.ok) {
-        const serverMsg = json?.error || JSON.stringify(json) || res.statusText;
-        setSendError(`HTTP ${res.status}: ${serverMsg}`);
+        setSendError(json?.error || 'Something went wrong');
       } else {
-        setSendResult('Successfully sent ' + coords.length + ' locations');
         const validResults = json.recommendations.filter(
           (r: any) => r.totalScore !== Infinity,
         );
-
-        // Navigate to the Results Screen and pass the data
         navigation.navigate('Results', { recommendations: validResults });
       }
     } catch (err: any) {
-      // Log full error to console for debugging on the device/emulator
-      console.error('sendLocationsToBackend error:', err);
-      setSendError(err?.message ?? String(err));
+      setSendError('Network error. Check your connection.');
     } finally {
       setSending(false);
     }
   }
 
-  return (
-    <View>
-      {locations.map((loc, i) => (
-        <View key={i} style={{ marginBottom: 8 }}>
-          <LocationInput
-            placeholder={`Where does person ${i + 1} live?`}
-            onSelect={value => updateLocationAt(i, value)}
-          />
-          {locations.length > 1 && (
-            <TouchableOpacity
-              onPress={() => removeLocationInput(i)}
-              style={{ alignSelf: 'flex-end', padding: 6 }}
+  const renderHeader = useMemo(
+    () => (
+      <View style={styles.inputCardContent}>
+        <Text style={styles.label}>Group Members</Text>
+
+        {locations.map((loc, index) => (
+          <View
+            key={loc.id}
+            style={[styles.inputRow, { zIndex: locations.length - index }]}
+          >
+            <View
+              style={[
+                styles.inputWrapper,
+                loc.data && styles.inputWrapperSuccess, // Visual cue for selection
+              ]}
             >
-              <Text style={{ color: '#d00' }}>Remove</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ))}
+              <LocationInput
+                value={loc.data?.name}
+                placeholder={`Where is person ${index + 1}?`}
+                onSelect={value => updateLocationAt(loc.id, value)}
+              />
+              {loc.data && <Text style={styles.checkIcon}>✓</Text>}
+            </View>
+            {locations.length > 2 && (
+              <TouchableOpacity
+                onPress={() => removeLocationInput(loc.id)}
+                style={styles.removeBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.removeBtnText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
 
-      <View style={{ flexDirection: 'row', marginTop: 6 }}>
-        <TouchableOpacity
-          onPress={addLocationInput}
-          style={{
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            backgroundColor: '#eee',
-            borderRadius: 6,
-            marginRight: 8,
-          }}
-        >
-          <Text>Add location</Text>
+        <TouchableOpacity onPress={addLocationInput} style={styles.addBtn}>
+          <Text style={styles.addBtnText}>+ Add another person</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={sendLocationsToBackend}
-          style={{
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            backgroundColor: '#2f95dc',
-            borderRadius: 6,
+        {sendError ? <Text style={styles.errorText}>{sendError}</Text> : null}
+      </View>
+    ),
+    [locations, sendError],
+  );
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* 1. Immersive Hero Background */}
+      <View style={styles.heroContainer}>
+        <ImageBackground
+          source={{
+            uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000',
           }}
-          disabled={sending}
+          style={styles.heroBackground}
         >
-          {sending ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={{ color: '#fff' }}>Send</Text>
-          )}
-        </TouchableOpacity>
+          <View style={styles.darkOverlay} />
+          <View
+            style={[styles.heroTextContainer, { paddingTop: insets.top + 40 }]}
+          >
+            <Text style={styles.heroTitle}>Meet Midway</Text>
+            <Text style={styles.heroSubtitle}>
+              Find the fairest spot for the whole group
+            </Text>
+          </View>
+        </ImageBackground>
       </View>
 
-      {sendError ? (
-        <Text style={{ color: 'red', marginTop: 8 }}>{sendError}</Text>
-      ) : null}
-      {sendResult ? (
-        <Text style={{ color: 'green', marginTop: 8 }}>{sendResult}</Text>
-      ) : null}
+      {/* 2. The Form (Now as a FlatList to prevent nesting errors) */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardView}
+      >
+        <FlatList
+          data={[]} // Empty array because the form is in the Header
+          renderItem={null}
+          ListHeaderComponent={renderHeader}
+          style={styles.inputCard}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled" // Critical for Google Places selection
+        />
+
+        {/* 3. Bottom Action Bar */}
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+          <TouchableOpacity
+            onPress={sendLocationsToBackend}
+            style={styles.primaryBtn}
+            disabled={sending}
+          >
+            {sending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.primaryBtnText}>Find Best Spots</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  heroContainer: {
+    height: 350,
+  },
+  container: { flex: 1, backgroundColor: '#FFF' },
+  heroBackground: { width: '100%', height: 350 },
+  darkOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  heroTextContainer: { paddingHorizontal: 24 },
+  heroTitle: {
+    fontSize: 42,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: -1,
+  },
+  heroSubtitle: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 8,
+    fontWeight: '500',
+  },
+
+  keyboardView: { flex: 1, marginTop: -60 },
+  inputCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  inputCardContent: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 100,
+  },
+  scrollContent: { paddingTop: 32, paddingBottom: 20, flexGrow: 1 },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+  },
+
+  inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingLeft: 0,
+    paddingRight: 12,
+    height: 54,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F2F2F7',
+    paddingHorizontal: 12,
+    overflow: 'visible',
+  },
+  inputWrapperSuccess: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#4CAF50',
+    borderWidth: 1.5,
+    shadowColor: '#4CAF50',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  checkIcon: {
+    color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  removeBtn: {
+    marginLeft: 12,
+    width: 36,
+    height: 36,
+    backgroundColor: '#FFF1F0',
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFCFCC',
+  },
+
+  removeBtnText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 14 },
+
+  addBtn: { paddingVertical: 12, alignItems: 'center' },
+  addBtnText: { color: '#007AFF', fontWeight: '600', fontSize: 16 },
+
+  footer: { paddingHorizontal: 24, backgroundColor: '#FFF' },
+  primaryBtn: {
+    backgroundColor: '#1C1C1E',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryBtnText: { color: '#FFF', fontWeight: '700', fontSize: 18 },
+  errorText: {
+    color: '#FF3B30',
+    marginTop: 12,
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+});

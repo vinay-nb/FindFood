@@ -21,7 +21,7 @@ const GOOGLE_API_KEY = KEY;
 
 export default function PlaceDetailScreen({ route }: any) {
   const { place } = route.params;
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
   const getPhotoUrl = (photoName: string) => {
