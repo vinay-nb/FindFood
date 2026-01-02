@@ -30,12 +30,12 @@ function App() {
             <Stack.Screen
               name="Input"
               component={MultiLocationInputs}
-              options={{ title: 'Find Midway' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="Results"
               component={ResultsScreen}
-              options={{ title: 'Fairness Rankings' }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="PlaceDetail"

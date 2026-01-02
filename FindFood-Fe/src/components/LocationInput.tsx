@@ -1,28 +1,44 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { GOOGLE_API_KEY } from '@env';
 
-type Location = {
+interface Location {
   name: string;
   lat: number;
   lng: number;
-};
+}
 
-type Props = {
+interface Props {
   placeholder: string;
-  onSelect: (location: Location) => void;
-};
+  onSelect: (value: Location | null) => void;
+  value?: string; // Add the missing prop
+}
 
-const LocationInput: React.FC<Props> = ({ placeholder, onSelect }) => {
+const LocationInput: React.FC<Props> = ({ placeholder, onSelect, value }) => {
+  const ref = useRef<any>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.setAddressText(value || '');
+    }
+  }, [value]);
+
   return (
     <View style={styles.container}>
       <GooglePlacesAutocomplete
+        ref={ref}
         placeholder={placeholder}
         fetchDetails={true}
         minLength={2}
         debounce={200}
         listViewDisplayed="auto"
+        suppressDefaultStyles={true}
+        enablePoweredByContainer={false}
+        textInputProps={{
+          numberOfLines: 1,
+          ellipsizeMode: 'tail',
+        }}
         onPress={(data, details = null) => {
           if (!details) return;
           onSelect({
@@ -38,14 +54,13 @@ const LocationInput: React.FC<Props> = ({ placeholder, onSelect }) => {
           key: GOOGLE_API_KEY,
           language: 'en',
         }}
-        enablePoweredByContainer={false}
         styles={{
-          container: styles.container,
-          textInputContainer: styles.textInputContainer,
+          container: styles.autocompleteContainer,
           textInput: styles.input,
           listView: styles.listView,
-          description: styles.description,
           row: styles.row,
+          description: styles.description,
+          separator: styles.separator,
         }}
       />
     </View>
@@ -54,38 +69,58 @@ const LocationInput: React.FC<Props> = ({ placeholder, onSelect }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 0,
+    flex: 1, // Take up all space inside the Wrapper
+    position: 'relative',
+  },
+  autocompleteContainer: {
+    flex: 1,
     width: '100%',
-  },
-  row: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  description: {
-    color: '#135DFC',
+    zIndex: 9999,
   },
   input: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    height: 44,
-    borderRadius: 6,
+    height: 54,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#efddddff',
+    color: '#1C1C1E',
+    paddingLeft: 12,
+    backgroundColor: 'transparent',
+    width: '100%',
   },
   listView: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF',
     position: 'absolute',
-    top: 48,
+    top: 54,
     left: 0,
     right: 0,
+    borderRadius: 12,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
     zIndex: 9999,
-    elevation: 9999,
+    width: 350,
   },
-  textInputContainer: {
-    paddingHorizontal: 0,
-    backgroundColor: 'transparent',
+  row: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 320,
+    overflow: 'hidden',
+  },
+  description: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
+    flex: 1,
+  },
+  separator: {
+    height: 0.5,
+    backgroundColor: '#E5E5EA',
+    marginLeft: 15,
   },
 });
 
