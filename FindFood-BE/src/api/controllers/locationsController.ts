@@ -19,16 +19,58 @@ interface Places {
   totalScore: number;
 }
 
+interface Place {
+  editorialSummary?: {
+    text: string;
+  };
+  formattedAddress: string;
+  types: string[];
+  rating: number;
+  priceLevel: number;
+  servesVegetarianFood: boolean;
+  displayName: {
+    text: string;
+  };
+  location: {
+    lat: number;
+    lng: number;
+  };
+  userRatingCount: number;
+  photos: any[];
+  reviews: any[];
+  googleMapsUri: string;
+  id: string;
+}
+
 const GOOGLE_API_KEY = config.google.apiKey;
 
 // 1. Math Utility: Calculate Standard Deviation
 function getStandardDeviation(numbers: number[]): number {
   const n = numbers.length;
-  const mean = numbers.reduce((a, b) => a + b) / n;
+  if (n < 2) return 0;
+  const avg = numbers.reduce((a, b) => a + b) / n;
   return Math.sqrt(
-    numbers.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / n
+    numbers.map((x) => Math.pow(x - avg, 2)).reduce((a, b) => a + b) / n
   );
 }
+
+function calculateFairnessPercentage(stdDevSeconds: number) {
+  // If stdDev is 0, it's 100% fair. If stdDev is 15 mins (900s), fairness drops significantly.
+  const score = 100 - (stdDevSeconds / 60) * 5;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+const generateDescription = (place: Place) => {
+  if (place.editorialSummary?.text) return place.editorialSummary.text;
+
+  const type = place.types[0]?.replace("_", " ") || "establishment";
+  const rating = place.rating > 4.5 ? "highly-rated" : "popular";
+  const price = place.priceLevel ? " affordable" : "";
+
+  return `A ${rating}${price} ${type} in ${
+    place.formattedAddress.split(",")[0]
+  }, perfect for a group meetup.`;
+};
 
 export async function handleLocations(req: any, res: any) {
   try {
@@ -56,7 +98,7 @@ export async function handleLocations(req: any, res: any) {
               latitude: centroid.lat,
               longitude: centroid.lng,
             },
-            radius: 2000.0,
+            radius: 2500.0,
           },
         },
       },
@@ -65,7 +107,7 @@ export async function handleLocations(req: any, res: any) {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": GOOGLE_API_KEY,
           "X-Goog-FieldMask":
-            "places.id,places.displayName,places.location,places.rating",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.editorialSummary,places.photos,places.types,places.servesVegetarianFood,places.googleMapsUri,places.reviews",
         },
       }
     );
@@ -109,53 +151,101 @@ export async function handleLocations(req: any, res: any) {
     );
 
     // Step D: Apply the Fairness Logic with Enriched Data
-    const rankedResults = candidates.map((place: any, destIndex: number) => {
-      // 1. Extract travel times (The "Math" part)
-      const travelTimes = routesResponse.data
-        .filter((item: any) => item.destinationIndex === destIndex)
-        .map((item: any) => {
-          // Safety check for v2/v1 duration strings
-          const durationStr = item.duration?.duration || item.duration;
-          return durationStr
-            ? parseInt(durationStr.replace("s", ""), 10)
-            : null;
-        })
-        .filter((t: any) => t !== null);
+    const rankedResults = candidates
+      .map((place: any, destIndex: number) => {
+        // 1. Extract travel times (The "Math" part)
+        const travelTimes = routesResponse.data
+          .filter((item: any) => item.destinationIndex === destIndex)
+          .map((item: any) => {
+            // Safety check for v2/v1 duration strings
+            const durationStr = item.duration?.duration || item.duration;
+            return durationStr
+              ? parseInt(durationStr.replace("s", ""), 10)
+              : null;
+          })
+          .filter((t: any) => t !== null);
 
-      // 2. Handle failure cases
-      if (travelTimes.length === 0) {
-        return { name: place.displayName?.text, totalScore: Infinity };
-      }
+        // 2. Handle failure cases
+        if (travelTimes.length === 0) {
+          return { name: place.displayName?.text, totalScore: Infinity };
+        }
 
-      // 3. Fairness Calculations
-      const avgTime =
-        travelTimes.reduce((a: number, b: number) => a + b, 0) /
-        travelTimes.length;
-      const stdDev = getStandardDeviation(travelTimes);
+        // 3. Fairness Calculations
+        const avgTime =
+          travelTimes.reduce((a: number, b: number) => a + b, 0) /
+          travelTimes.length;
+        const stdDev = getStandardDeviation(travelTimes);
 
-      // 4. Return Enriched Object (The "Product" part)
-      return {
-        id: place.id,
-        name: place.displayName?.text,
-        location: place.location,
-        rating: place.rating,
-        userRatingCount: place.userRatingCount, // Added
-        types: place.types, // Added (useful for icons like 'pizza' or 'bar')
-        summary: place.editorialSummary?.text, // Added (the "vibe" description)
+        // fallback
+        // Define lists of specific types
+        const pureVegTypes = ["vegetarian_restaurant", "vegan_restaurant"];
 
-        // Performance Metrics
-        avgTravelTimeMinutes: Math.round(avgTime / 60),
-        fairnessScore: Math.round(stdDev / 60), // standard deviation in minutes
+        // 1. Is it definitely Veg?
+        const isVeg =
+          place.servesVegetarianFood ||
+          place.types.some((t: string) => pureVegTypes.includes(t));
 
-        // The Ranking Score
-        totalScore: avgTime + stdDev * 1.5,
-      };
-    });
+        // 2. Is it likely Non-Veg?
+        // We check if it's NOT a pure veg place AND it belongs to categories that usually serve meat
+        const meatHeavyTypes = [
+          "steak_house",
+          "barbecue_restaurant",
+          "hamburger_restaurant",
+          "seafood_restaurant",
+          "brazilian_restaurant",
+        ];
+
+        const isLikelyMeat = place.types.some((t: string) =>
+          meatHeavyTypes.includes(t)
+        );
+
+        // 3. The "Smart" Non-Veg Flag
+        // If it's a restaurant, not pure veg, and hasn't explicitly flagged itself as "Veg Only"
+        const isNonVeg =
+          !pureVegTypes.some((t: string) => place.types.includes(t)) &&
+          (isLikelyMeat || !place.servesVegetarianFood);
+
+        // 4. Return Object
+        return {
+          id: place.id,
+          name: place.displayName?.text,
+          description: generateDescription(place),
+          address: place.formattedAddress,
+          coordinates: place.location,
+          rating: place.rating,
+          reviewCount: place.userRatingCount,
+          priceLevel: place.priceLevel,
+          isVeg: isVeg,
+          isNonVeg: isNonVeg,
+          isPureVeg: isVeg && !isNonVeg,
+          type: place.types[0],
+
+          // PHOTOS: Ensure send the full resource name
+          photos: place.photos?.map((p: any) => p.name) || [],
+
+          // REVIEWS: Map the top 3 reviews
+          reviews:
+            place.reviews?.map((r: any) => ({
+              text: r.text?.text,
+              author: r.authorAttribution?.displayName,
+              rating: r.rating,
+              time: r.relativePublishTimeDescription,
+            })) || [],
+
+          navigationUrl: place.googleMapsUri,
+          avgTravelTimeMinutes: Math.round(avgTime / 60),
+          fairnessScore: calculateFairnessPercentage(stdDev),
+          totalScore: avgTime + stdDev * 1.5,
+        };
+      })
+      .filter(Boolean);
 
     // Sort and filter out reachable places
     const finalRecommendation = rankedResults
       .filter((r: Places) => r.totalScore !== Infinity)
       .sort((a: Places, b: Places) => a.totalScore - b.totalScore);
+
+    console.log(finalRecommendation, "finalRecommendation");
 
     return res.json({
       centroid,
