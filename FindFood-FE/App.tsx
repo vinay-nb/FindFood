@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import PlaceDetailScreen from './src/components/PlaceDetailsScreen';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useEffect } from 'react';
+import AuthScreen from '@/components/GoogleSso';
 
 const Stack = createStackNavigator();
 
@@ -36,6 +37,11 @@ function App() {
               headerTintColor: isDarkMode ? '#fff' : '#000',
             }}
           >
+            <Stack.Screen
+              name="Auth"
+              component={AuthScreen}
+              options={{ headerShown: false }}
+            />
             <Stack.Screen
               name="Input"
               component={MultiLocationInputs}

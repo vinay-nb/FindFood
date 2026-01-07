@@ -87,42 +87,42 @@ export default function MultiLocationInputs() {
     [locations, sendError],
   );
 
-  // useEffect(() => {
-  //   // 1. Check initial session
-  //   supabase.auth.getSession().then(({ data: { session } }) => {
-  //     setSession(session);
-  //     setAuthLoading(false);
+  useEffect(() => {
+    // 1. Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
 
-  //     // If no session, redirect to Auth immediately
-  //     // if (!session) {
-  //     //   navigation.navigate('Auth');
-  //     // }
-  //   });
+      // If no session, redirect to Auth immediately
+      if (!session) {
+        navigation.navigate('Auth');
+      }
+    });
 
-  //   // 2. Listen for auth changes (Login/Logout)
-  //   const {
-  //     data: { subscription },
-  //   } = supabase.auth.onAuthStateChange((_event, session) => {
-  //     setSession(session);
-  //     // if (!session) {
-  //     //   navigation.navigate('Auth');
-  //     // }
-  //   });
+    // 2. Listen for auth changes (Login/Logout)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) {
+        navigation.navigate('Auth');
+      }
+    });
 
-  //   return () => subscription.unsubscribe();
-  // }, [navigation]);
+    return () => subscription.unsubscribe();
+  }, [navigation]);
 
-  // if (authLoading) {
-  //   return (
-  //     <View style={[styles.container, { justifyContent: 'center' }]}>
-  //       <ActivityIndicator size="large" color="#1C1C1E" />
-  //     </View>
-  //   );
-  // }
+  if (authLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color="#1C1C1E" />
+      </View>
+    );
+  }
 
   // if (!session) {
-  // navigation.navigate('Auth');
-  // return;
+  //   navigation.navigate('Auth');
+  //   return;
   // }
 
   function updateLocationAt(id: string, value: Location | null) {
