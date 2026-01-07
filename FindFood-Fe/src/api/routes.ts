@@ -1,6 +1,7 @@
-import { BACKEND_URL } from '@env';
 
-const BASE_URL = BACKEND_URL ? BACKEND_URL : 'http://localhost:4444';
+const BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL
+  ? process.env.EXPO_PUBLIC_BACKEND_URL
+  : 'http://localhost:4444';
 
 export const API = {
   BASE: BASE_URL,

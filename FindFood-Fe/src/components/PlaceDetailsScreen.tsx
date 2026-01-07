@@ -12,12 +12,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { GOOGLE_API_KEY as KEY } from '@env';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import API from '../api/routes';
 import { getPriceSymbol } from '../utils/commonUtils';
 
-const GOOGLE_API_KEY = KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 
 export default function PlaceDetailScreen({ route }: any) {
   const { place } = route.params;

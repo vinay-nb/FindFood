@@ -1,4 +1,12 @@
 {
   "name": "FindFood",
-  "displayName": "FindFood"
+  "displayName": "FindFood",
+  "plugins": ["@react-native-google-signin/google-signin"],
+  "ios": {
+    "bundleIdentifier": "org.reactjs.native.example.FindFood",
+    "googleServicesFile": "./GoogleService-Info.plist"
+  },
+  "android": {
+    "package": "com.yourname.findfood"
+  }
 }

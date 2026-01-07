@@ -21,6 +21,7 @@ DerivedData
 *.ipa
 *.xcuserstate
 **/.xcode.env.local
+ios/
 
 # Android/IntelliJ
 #
@@ -34,6 +35,8 @@ local.properties
 *.keystore
 !debug.keystore
 .kotlin/
+android/
+
 
 # node.js
 #
@@ -86,3 +89,18 @@ yarn-error.log
 #BE
 #build files
 /FindFood-BE/dist/
+
+# Supabase
+# vscode settings
+FindFood-DB/.vscode/
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+# expo
+.expo/

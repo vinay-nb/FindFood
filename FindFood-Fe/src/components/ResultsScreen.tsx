@@ -13,7 +13,6 @@ import {
   UIManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GOOGLE_API_KEY as KEY } from '@env';
 import API from '../api/routes';
 import { useNavigation } from '@react-navigation/native';
 import { getPriceSymbol } from '../utils/commonUtils';
@@ -26,7 +25,7 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const GOOGLE_API_KEY = KEY;
+const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 
 interface Details {
   id: string;

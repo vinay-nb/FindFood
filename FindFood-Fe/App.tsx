@@ -6,11 +6,20 @@ import { createStackNavigator } from '@react-navigation/stack';
 import ResultsScreen from './src/components/ResultsScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import PlaceDetailScreen from './src/components/PlaceDetailsScreen';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useEffect } from 'react';
 
 const Stack = createStackNavigator();
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: process.env.EXPO_PUBLIC_GOOGLE_SSO_WEB_CLIENT_ID,
+      offlineAccess: true,
+    });
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
