@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import { GOOGLE_API_KEY } from '@env';
 
 interface Location {
   name: string;
@@ -51,7 +50,7 @@ const LocationInput: React.FC<Props> = ({ placeholder, onSelect, value }) => {
           console.warn('GooglePlacesAutocomplete onFail:', error);
         }}
         query={{
-          key: GOOGLE_API_KEY,
+          key: process.env.EXPO_PUBLIC_GOOGLE_API_KEY,
           language: 'en',
         }}
         styles={{

@@ -1,6 +1,5 @@
 import axios from "axios";
 import { ROUTES } from "../routes";
-import { config } from "../../config/index";
 
 interface Location {
   lat: number;
@@ -42,7 +41,7 @@ interface Place {
   id: string;
 }
 
-const GOOGLE_API_KEY = config.google.apiKey;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 // 1. Math Utility: Calculate Standard Deviation
 function getStandardDeviation(numbers: number[]): number {

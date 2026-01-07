@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LocationInput from './LocationInput';
+import { supabase } from '../api/supbase';
 import API from '../api/routes';
+import { Session } from '@supabase/supabase-js';
 
 type Location = {
   name: string;
@@ -29,71 +31,16 @@ type LocationEntry = {
 };
 
 export default function MultiLocationInputs() {
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [locations, setLocations] = useState<LocationEntry[]>([
     { id: Math.random().toString(), data: null },
     { id: Math.random().toString(), data: null },
   ]);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
-
-  function updateLocationAt(id: string, value: Location | null) {
-    setLocations(prev =>
-      prev.map(loc => (loc.id === id ? { ...loc, data: value } : loc)),
-    );
-  }
-
-  function addLocationInput() {
-    setLocations(prev => [
-      ...prev,
-      { id: Math.random().toString(), data: null },
-    ]);
-  }
-
-  function removeLocationInput(id: string) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setLocations(prev => prev.filter(loc => loc.id !== id));
-  }
-
-  async function sendLocationsToBackend() {
-    const coords = locations
-      .filter(loc => loc.data !== null)
-      .map(loc => ({
-        lat: loc.data!.lat,
-        lng: loc.data!.lng,
-      }));
-
-    if (coords.length < 2) {
-      setSendError('Please add at least 2 people to find a midway spot.');
-      return;
-    }
-
-    setSendError(null);
-    setSending(true);
-
-    try {
-      const res = await fetch(API?.POST_LOCATION, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locations: coords }),
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        setSendError(json?.error || 'Something went wrong');
-      } else {
-        const validResults = json.recommendations.filter(
-          (r: any) => r.totalScore !== Infinity,
-        );
-        navigation.navigate('Results', { recommendations: validResults });
-      }
-    } catch (err: any) {
-      setSendError('Network error. Check your connection.');
-    } finally {
-      setSending(false);
-    }
-  }
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const renderHeader = useMemo(
     () => (
@@ -139,6 +86,104 @@ export default function MultiLocationInputs() {
     ),
     [locations, sendError],
   );
+
+  // useEffect(() => {
+  //   // 1. Check initial session
+  //   supabase.auth.getSession().then(({ data: { session } }) => {
+  //     setSession(session);
+  //     setAuthLoading(false);
+
+  //     // If no session, redirect to Auth immediately
+  //     // if (!session) {
+  //     //   navigation.navigate('Auth');
+  //     // }
+  //   });
+
+  //   // 2. Listen for auth changes (Login/Logout)
+  //   const {
+  //     data: { subscription },
+  //   } = supabase.auth.onAuthStateChange((_event, session) => {
+  //     setSession(session);
+  //     // if (!session) {
+  //     //   navigation.navigate('Auth');
+  //     // }
+  //   });
+
+  //   return () => subscription.unsubscribe();
+  // }, [navigation]);
+
+  // if (authLoading) {
+  //   return (
+  //     <View style={[styles.container, { justifyContent: 'center' }]}>
+  //       <ActivityIndicator size="large" color="#1C1C1E" />
+  //     </View>
+  //   );
+  // }
+
+  // if (!session) {
+  // navigation.navigate('Auth');
+  // return;
+  // }
+
+  function updateLocationAt(id: string, value: Location | null) {
+    setLocations(prev =>
+      prev.map(loc => (loc.id === id ? { ...loc, data: value } : loc)),
+    );
+  }
+
+  function addLocationInput() {
+    setLocations(prev => [
+      ...prev,
+      { id: Math.random().toString(), data: null },
+    ]);
+  }
+
+  function removeLocationInput(id: string) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setLocations(prev => prev.filter(loc => loc.id !== id));
+  }
+
+  async function sendLocationsToBackend() {
+    const coords = locations
+      .filter(loc => loc.data !== null)
+      .map(loc => ({
+        lat: loc.data!.lat,
+        lng: loc.data!.lng,
+      }));
+
+    if (coords.length < 2) {
+      setSendError('Please add at least 2 people to find a midway spot.');
+      return;
+    }
+
+    setSendError(null);
+    setSending(true);
+
+    try {
+      const res = await fetch(API?.POST_LOCATION, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`, // Adding security
+        },
+        body: JSON.stringify({ locations: coords }),
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setSendError(json?.error || 'Something went wrong');
+      } else {
+        const validResults = json.recommendations.filter(
+          (r: any) => r.totalScore !== Infinity,
+        );
+        navigation.navigate('Results', { recommendations: validResults });
+      }
+    } catch (err: any) {
+      setSendError('Network error. Check your connection.');
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <View style={styles.container}>
