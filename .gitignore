@@ -104,3 +104,5 @@ FindFood-DB/.vscode/
 
 # expo
 .expo/
+
+.bundle/*
