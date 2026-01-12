@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   View,
   Text,
@@ -12,7 +18,7 @@ import {
   KeyboardAvoidingView,
   LayoutAnimation,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LocationInput from './LocationInput';
 import { supabase } from '../api/supbase';
@@ -33,6 +39,7 @@ type LocationEntry = {
 export default function MultiLocationInputs() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const lastSearchTimestamp = useRef<number | null>(null);
   const [locations, setLocations] = useState<LocationEntry[]>([
     { id: Math.random().toString(), data: null },
     { id: Math.random().toString(), data: null },
@@ -41,6 +48,21 @@ export default function MultiLocationInputs() {
   const [sendError, setSendError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = Date.now();
+      const twoHours = 2 * 60 * 60 * 1000;
+
+      // If they haven't searched in 2 hours, reset the form
+      if (
+        lastSearchTimestamp.current &&
+        now - lastSearchTimestamp.current > twoHours
+      ) {
+        resetForm();
+      }
+    }, []),
+  );
 
   const renderHeader = useMemo(
     () => (
@@ -76,11 +98,17 @@ export default function MultiLocationInputs() {
             )}
           </View>
         ))}
+        <View style={styles.actionRow}>
+          <TouchableOpacity onPress={addLocationInput} style={styles.addBtn}>
+            <Text style={styles.addBtnText}>+ Add another person</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity onPress={addLocationInput} style={styles.addBtn}>
-          <Text style={styles.addBtnText}>+ Add another person</Text>
-        </TouchableOpacity>
-
+          {locations.some(l => l.data) && (
+            <TouchableOpacity onPress={resetForm} style={styles.resetBtn}>
+              <Text style={styles.resetBtnText}>Clear All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         {sendError ? <Text style={styles.errorText}>{sendError}</Text> : null}
       </View>
     ),
@@ -109,7 +137,9 @@ export default function MultiLocationInputs() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigation]);
 
   if (authLoading) {
@@ -120,10 +150,18 @@ export default function MultiLocationInputs() {
     );
   }
 
-  // if (!session) {
-  //   navigation.navigate('Auth');
-  //   return;
-  // }
+  if (!session) {
+    navigation.navigate('Auth');
+    return;
+  }
+
+  function resetForm() {
+    setLocations([
+      { id: Math.random().toString(), data: null },
+      { id: Math.random().toString(), data: null },
+    ]);
+    setSendError(null);
+  }
 
   function updateLocationAt(id: string, value: Location | null) {
     setLocations(prev =>
@@ -164,7 +202,7 @@ export default function MultiLocationInputs() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.access_token}`, // Adding security
+          authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ locations: coords }),
       });
@@ -346,6 +384,21 @@ const styles = StyleSheet.create({
 
   addBtn: { paddingVertical: 12, alignItems: 'center' },
   addBtnText: { color: '#007AFF', fontWeight: '600', fontSize: 16 },
+
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  resetBtn: {
+    paddingVertical: 12,
+  },
+  resetBtnText: {
+    color: '#FF3B30',
+    fontWeight: '600',
+    fontSize: 14,
+  },
 
   footer: { paddingHorizontal: 24, backgroundColor: '#FFF' },
   primaryBtn: {
