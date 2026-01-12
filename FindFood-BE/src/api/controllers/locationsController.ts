@@ -1,5 +1,8 @@
 import axios from "axios";
 import { ROUTES } from "../routes";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 interface Location {
   lat: number;
@@ -41,7 +44,7 @@ interface Place {
   id: string;
 }
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 
 // 1. Math Utility: Calculate Standard Deviation
 function getStandardDeviation(numbers: number[]): number {
@@ -249,7 +252,11 @@ export async function handleLocations(req: any, res: any) {
       recommendations: finalRecommendation,
     });
   } catch (err: any) {
-    console.error(err);
+    if (err.response) {
+      console.error("Google API Error:", err.response.data);
+    } else {
+      console.error("Backend Error:", err.message);
+    }
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }

@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import locationsRouter from "./api/routes/locations";
 import { ROUTES } from "./api/routes";
+import { authenticate } from "./api/middlewares/authMiddleWare";
 
 declare const process: any;
 
@@ -12,7 +13,7 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.use(ROUTES.LOCATIONS, locationsRouter as any);
+app.use(ROUTES.LOCATIONS, authenticate, locationsRouter as any);
 
 app.get("/", (_req: any, res: any) => res.send("FindFood-BE running"));
 
