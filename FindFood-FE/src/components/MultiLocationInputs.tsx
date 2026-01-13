@@ -17,6 +17,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   LayoutAnimation,
+  Keyboard,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +25,7 @@ import LocationInput from './LocationInput';
 import { supabase } from '../api/supbase';
 import API from '../api/routes';
 import { Session } from '@supabase/supabase-js';
+import * as Location from 'expo-location';
 
 type Location = {
   name: string;
@@ -142,6 +144,37 @@ export default function MultiLocationInputs() {
     };
   }, [navigation]);
 
+  useEffect(() => {
+    detectFirstPerson();
+  }, []);
+
+  // AUTO-DETECT LOCATION FOR PERSON 1
+  const detectFirstPerson = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') return;
+
+    let location = await Location.getCurrentPositionAsync({});
+    const address = await Location.reverseGeocodeAsync(location.coords);
+    const name =
+      address.length > 0
+        ? `${address[0].name || address[0].street}`
+        : 'Current Location';
+
+    // Set the first item to current location automatically
+    setLocations(prev => {
+      const newLocs = [...prev];
+      newLocs[0] = {
+        ...newLocs[0],
+        data: {
+          name,
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+        },
+      };
+      return newLocs;
+    });
+  };
+
   if (authLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center' }]}>
@@ -193,6 +226,7 @@ export default function MultiLocationInputs() {
       setSendError('Please add at least 2 people to find a midway spot.');
       return;
     }
+
 
     setSendError(null);
     setSending(true);
@@ -260,6 +294,7 @@ export default function MultiLocationInputs() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled" // Critical for Google Places selection
+          onScroll={() => Keyboard.dismiss()}
         />
 
         {/* 3. Bottom Action Bar */}
