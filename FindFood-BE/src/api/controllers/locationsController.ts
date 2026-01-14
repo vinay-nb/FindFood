@@ -1,6 +1,12 @@
 import axios from "axios";
 import { ROUTES } from "../routes";
 import dotenv from "dotenv";
+import {
+  DEFAULT_MEETUP_TYPES,
+  FOOD_CATEGORIES,
+  pureVegTypes,
+  meatHeavyTypes,
+} from "../../utils/commonUtil";
 
 dotenv.config();
 
@@ -76,9 +82,29 @@ const generateDescription = (place: Place) => {
 
 export async function handleLocations(req: any, res: any) {
   try {
-    const { locations } = req.body; // Array of {lat, lng}
+    // 1. Destructure locations AND preferences
+    const { locations, preferences } = req.body;
 
-    // Calculate Centroid (Your existing logic)
+    // 2. Map UI Types to Google API Types
+    const typeMapping: Record<string, string[]> = {
+      restaurant: ["restaurant"],
+      cafe: ["cafe", "bakery"],
+      pub: ["bar", "pub"],
+      park: ["park", "hiking_area"],
+      museum: ["museum", "art_gallery"],
+    };
+
+    let includedTypes: string[];
+
+    if (!preferences?.type || preferences.type === "all") {
+      // If 'All' is selected, we use the broad list
+      includedTypes = DEFAULT_MEETUP_TYPES;
+    } else {
+      // Otherwise, use your existing mapping
+      includedTypes = typeMapping[preferences.type];
+    }
+
+    // Calculate Centroid
     const centerLat =
       locations.reduce((s: number, l: Location) => s + l.lat, 0) /
       locations.length;
@@ -87,20 +113,20 @@ export async function handleLocations(req: any, res: any) {
       locations.length;
     const centroid = { lat: centerLat, lng: centerLng };
 
-    //  Fetch Candidate Restaurants (Places API New)
+    // Fetch Candidate Restaurants (Places API New)
     // We search near the centroid for the best candidates
     const placesResponse = await axios.post(
       `${ROUTES.THIRD_PARTY.SEARCH_NEARBY}`,
       {
-        includedTypes: ["restaurant", "cafe"],
-        maxResultCount: 10,
+        includedTypes: includedTypes,
+        maxResultCount: preferences?.type === "all" ? 20 : 10,
         locationRestriction: {
           circle: {
             center: {
               latitude: centroid.lat,
               longitude: centroid.lng,
             },
-            radius: 2500.0,
+            radius: 3000.0,
           },
         },
       },
@@ -114,11 +140,21 @@ export async function handleLocations(req: any, res: any) {
       }
     );
 
-    const candidates = placesResponse.data.places;
+    let candidates = placesResponse.data.places || [];
     if (!candidates || candidates.length === 0) {
       return res.json({
         message: "No places found near the center",
         center: centroid,
+      });
+    }
+
+    if (preferences?.isVeg) {
+      candidates = candidates.filter((place: any) => {
+        const pureVegTypes = ["vegetarian_restaurant", "vegan_restaurant"];
+        return (
+          place.servesVegetarianFood ||
+          place.types.some((t: string) => pureVegTypes.includes(t))
+        );
       });
     }
 
@@ -161,9 +197,9 @@ export async function handleLocations(req: any, res: any) {
           .map((item: any) => {
             // Safety check for v2/v1 duration strings
             const durationStr = item.duration?.duration || item.duration;
-            return durationStr
+            return typeof durationStr === "string"
               ? parseInt(durationStr.replace("s", ""), 10)
-              : null;
+              : durationStr;
           })
           .filter((t: any) => t !== null);
 
@@ -178,32 +214,27 @@ export async function handleLocations(req: any, res: any) {
           travelTimes.length;
         const stdDev = getStandardDeviation(travelTimes);
 
-        // fallback
-        // Define lists of specific types
-        const pureVegTypes = ["vegetarian_restaurant", "vegan_restaurant"];
+        const isFoodPlace = place.types.some((t: string) =>
+          FOOD_CATEGORIES.includes(t)
+        );
 
+        // fallback
         // 1. Is it definitely Veg?
         const isVeg =
-          place.servesVegetarianFood ||
-          place.types.some((t: string) => pureVegTypes.includes(t));
+          isFoodPlace &&
+          (place.servesVegetarianFood ||
+            place.types.some((t: string) => pureVegTypes.includes(t)));
 
         // 2. Is it likely Non-Veg?
         // We check if it's NOT a pure veg place AND it belongs to categories that usually serve meat
-        const meatHeavyTypes = [
-          "steak_house",
-          "barbecue_restaurant",
-          "hamburger_restaurant",
-          "seafood_restaurant",
-          "brazilian_restaurant",
-        ];
-
-        const isLikelyMeat = place.types.some((t: string) =>
-          meatHeavyTypes.includes(t)
-        );
+        const isLikelyMeat =
+          isFoodPlace &&
+          place.types.some((t: string) => meatHeavyTypes.includes(t));
 
         // 3. The "Smart" Non-Veg Flag
         // If it's a restaurant, not pure veg, and hasn't explicitly flagged itself as "Veg Only"
         const isNonVeg =
+          isFoodPlace &&
           !pureVegTypes.some((t: string) => place.types.includes(t)) &&
           (isLikelyMeat || !place.servesVegetarianFood);
 
@@ -217,9 +248,9 @@ export async function handleLocations(req: any, res: any) {
           rating: place.rating,
           reviewCount: place.userRatingCount,
           priceLevel: place.priceLevel,
-          isVeg: isVeg,
-          isNonVeg: isNonVeg,
-          isPureVeg: isVeg && !isNonVeg,
+          isVeg: isFoodPlace ? isVeg : false,
+          isNonVeg: isFoodPlace ? isNonVeg : false,
+          isPureVeg: isFoodPlace ? isVeg && !isNonVeg : false,
           type: place.types[0],
 
           // PHOTOS: Ensure send the full resource name
