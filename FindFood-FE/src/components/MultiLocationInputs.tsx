@@ -26,6 +26,7 @@ import { supabase } from '../api/supbase';
 import API from '../api/routes';
 import { Session } from '@supabase/supabase-js';
 import * as Location from 'expo-location';
+import { categories } from '@/utils/commonUtils';
 
 type Location = {
   name: string;
@@ -50,6 +51,10 @@ export default function MultiLocationInputs() {
   const [sendError, setSendError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [preferences, setPreferences] = useState({
+    type: 'all', // default
+    isVeg: false,
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -69,6 +74,68 @@ export default function MultiLocationInputs() {
   const renderHeader = useMemo(
     () => (
       <View style={styles.inputCardContent}>
+        <Text style={styles.label}>What's the vibe?</Text>
+
+        <FlatList
+          horizontal
+          data={categories}
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.filterList}
+          renderItem={({ item }) => {
+            const isActive = preferences.type === item.id;
+            return (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[
+                  styles.premiumChip,
+                  isActive && styles.premiumChipActive,
+                ]}
+                onPress={() => {
+                  LayoutAnimation.configureNext(
+                    LayoutAnimation.Presets.easeInEaseOut,
+                  );
+                  setPreferences(prev => ({ ...prev, type: item.id }));
+                }}
+              >
+                <Text style={styles.chipEmoji}>{item.emoji || '📍'}</Text>
+                <Text
+                  style={[
+                    styles.premiumChipText,
+                    isActive && styles.premiumChipTextActive,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+
+        {/* --- NEW: DIETARY TOGGLE (Visible only for food/cafes) --- */}
+        {(preferences.type === 'restaurant' || preferences.type === 'cafe') && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.vegToggle}
+            onPress={() => {
+              LayoutAnimation.configureNext(
+                LayoutAnimation.Presets.easeInEaseOut,
+              );
+              setPreferences(prev => ({ ...prev, isVeg: !prev.isVeg }));
+            }}
+          >
+            <View
+              style={[
+                styles.toggleCircle,
+                preferences.isVeg && styles.toggleCircleActive,
+              ]}
+            >
+              {preferences.isVeg && <View style={styles.innerDot} />}
+            </View>
+            <Text style={styles.vegToggleText}>Show Only Vegetarian Spots</Text>
+          </TouchableOpacity>
+        )}
+
         <Text style={styles.label}>Group Members</Text>
 
         {locations.map((loc, index) => (
@@ -114,7 +181,7 @@ export default function MultiLocationInputs() {
         {sendError ? <Text style={styles.errorText}>{sendError}</Text> : null}
       </View>
     ),
-    [locations, sendError],
+    [locations, sendError, preferences],
   );
 
   useEffect(() => {
@@ -223,10 +290,11 @@ export default function MultiLocationInputs() {
       }));
 
     if (coords.length < 2) {
-      setSendError('Please add at least 2 people to find a midway spot.');
+      setSendError(
+        'Please add at least 2 people locations, to find a midway spot.',
+      );
       return;
     }
-
 
     setSendError(null);
     setSending(true);
@@ -238,7 +306,13 @@ export default function MultiLocationInputs() {
           'Content-Type': 'application/json',
           authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ locations: coords }),
+        body: JSON.stringify({
+          locations: coords,
+          preferences: {
+            type: preferences.type,
+            isVeg: preferences.isVeg,
+          },
+        }),
       });
       const json = await res.json();
 
@@ -357,14 +431,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   scrollContent: { paddingTop: 32, paddingBottom: 20, flexGrow: 1 },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 16,
-  },
 
   inputWrapper: {
     flex: 1,
@@ -454,5 +520,108 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     fontWeight: '500',
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  filterChipActive: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#1C1C1E',
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  filterTextActive: {
+    color: '#FFF',
+  },
+  toggleCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#C7C7CC',
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toggleCircleActive: {
+    borderColor: '#4CAF50',
+  },
+  innerDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#4CAF50',
+  },
+  chipEmoji: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  premiumChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3A3A3C',
+  },
+  premiumChipTextActive: {
+    color: '#FFFFFF',
+  },
+
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  filterList: {
+    marginBottom: 12,
+    paddingRight: 20,
+    paddingVertical: 8,
+    paddingLeft: 4,
+  },
+  premiumChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#F2F2F7',
+  },
+  premiumChipActive: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#1C1C1E',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    transform: [{ scale: 1.02 }],
+  },
+  vegToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 16,
+    alignSelf: 'flex-start',
+  },
+  vegToggleText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#444',
   },
 });

@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E5EA',
     zIndex: 999,
-    width: '100%',
+    width: 350,
     position: 'absolute',
   },
   headerContainer: {

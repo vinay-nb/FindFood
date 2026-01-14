@@ -10,4 +10,13 @@ const getPriceSymbol = (level: string | undefined): string => {
   return level ? priceMap[level] || '₹₹' : '₹₹';
 };
 
-export { getPriceSymbol };
+const categories = [
+  { id: 'all', label: 'All', emoji: '✨' },
+  { id: 'restaurant', label: 'Food', emoji: '🍕' },
+  { id: 'cafe', label: 'Cafes', emoji: '☕' },
+  { id: 'pub', label: 'Drinks', emoji: '🍺' },
+  { id: 'park', label: 'Parks', emoji: '🌳' },
+  { id: 'museum', label: 'Art', emoji: '🖼️' },
+];
+
+export { getPriceSymbol, categories };
