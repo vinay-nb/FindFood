@@ -11,11 +11,13 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Share,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import API from '../api/routes';
 import { useNavigation } from '@react-navigation/native';
 import { getPriceSymbol } from '../utils/commonUtils';
+import { Feather } from '@expo/vector-icons';
 
 // Enable LayoutAnimation for Android
 if (
@@ -90,6 +92,32 @@ export default function ResultsScreen({ route }: any) {
     if (!photoName) return null;
 
     return `${API?.THIRD_PARTY?.GOOGLE_PLACES_PHOTO}/${photoName}/media?key=${GOOGLE_API_KEY}&maxHeightPx=800`;
+  };
+
+  const onShare = async (item: Details) => {
+    try {
+      const shareMessage =
+        `📍 *Found a Midway Spot!* \n\n` +
+        `Hey guys, let's meet at *${item.name}*.\n` +
+        `It's a ${item.fairnessScore}% fair match for our group with an avg. ${item.avgTravelTimeMinutes} min travel time.\n\n` +
+        `🗺️ View on Maps: ${item.navigationUrl}`;
+
+      const result = await Share.share({
+        message: shareMessage,
+        url: item.navigationUrl, // URL parameter helps with the preview on iOS
+        title: `Meetup at ${item.name}`,
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+        } else {
+          // shared
+        }
+      }
+    } catch (error: any) {
+      console.error(error.message);
+    }
   };
 
   const renderItem = ({ item }: { item: Details }) => {
@@ -202,12 +230,23 @@ export default function ResultsScreen({ route }: any) {
                   {item.avgTravelTimeMinutes} mins
                 </Text>
               </View>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => Linking.openURL(item.navigationUrl)}
-              >
-                <Text style={styles.actionText}>Navigate</Text>
-              </TouchableOpacity>
+              <View style={styles.actionGroup}>
+                {/* SHARE BUTTON */}
+                <TouchableOpacity
+                  activeOpacity={0.6}
+                  style={styles.transparentShareBtn}
+                  onPress={() => onShare(item)}
+                >
+                  <Feather name="send" size={20} color="#1C1C1E" />
+                </TouchableOpacity>
+                {/* NAVIGATE BUTTON */}
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => Linking.openURL(item.navigationUrl)}
+                >
+                  <Text style={styles.actionText}>Navigate</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -411,7 +450,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
 
-  // Expanded Section Styles
   expandedSection: { marginTop: 16 },
   divider: { height: 1, backgroundColor: '#F2F2F7', marginBottom: 16 },
   sectionTitle: {
@@ -474,6 +512,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   actionText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
+  transparentShareBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'transparent', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E5E5EA', 
+  },
 });
