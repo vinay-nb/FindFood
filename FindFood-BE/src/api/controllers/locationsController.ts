@@ -132,7 +132,7 @@ export async function handleLocations(req: any, res: any) {
         "Escape rooms, Go karting, Paintball, Wonderla, Fun World, Bowling";
 
       const response = await axios.post(
-        `https://places.googleapis.com/v1/places:searchText`,
+        `${ROUTES.THIRD_PARTY.SEARCH_TEXT}`,
         {
           textQuery: activityQuery,
           locationBias: {

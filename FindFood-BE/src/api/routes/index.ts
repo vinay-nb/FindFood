@@ -8,6 +8,7 @@ export const ROUTES = {
     SEARCH_NEARBY: "https://places.googleapis.com/v1/places:searchNearby",
     DISTANCE_MATRIX:
       "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix",
+    SEARCH_TEXT: "https://places.googleapis.com/v1/places:searchText",
   },
 };
 export default ROUTES;
