@@ -15,6 +15,7 @@ const categories = [
   { id: 'restaurant', label: 'Food', emoji: '🍕' },
   { id: 'cafe', label: 'Cafes', emoji: '☕' },
   { id: 'pub', label: 'Drinks', emoji: '🍺' },
+  { id: 'activities', label: 'Activities', emoji: '🎮' },
   { id: 'park', label: 'Parks', emoji: '🌳' },
   { id: 'museum', label: 'Art', emoji: '🖼️' },
 ];

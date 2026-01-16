@@ -85,6 +85,13 @@ export async function handleLocations(req: any, res: any) {
     // 1. Destructure locations AND preferences
     const { locations, preferences } = req.body;
 
+    const ACTIVITY_NEARBY_TYPES = [
+      "amusement_center",
+      "bowling_alley",
+      "tourist_attraction",
+      "amusement_park",
+      "event_venue",
+    ];
     // 2. Map UI Types to Google API Types
     const typeMapping: Record<string, string[]> = {
       restaurant: ["restaurant"],
@@ -92,13 +99,14 @@ export async function handleLocations(req: any, res: any) {
       pub: ["bar", "pub"],
       park: ["park", "hiking_area"],
       museum: ["museum", "art_gallery"],
+      activities: ACTIVITY_NEARBY_TYPES,
     };
 
     let includedTypes: string[];
 
     if (!preferences?.type || preferences.type === "all") {
       // If 'All' is selected, we use the broad list
-      includedTypes = DEFAULT_MEETUP_TYPES;
+      includedTypes = [...DEFAULT_MEETUP_TYPES, ...ACTIVITY_NEARBY_TYPES];
     } else {
       // Otherwise, use your existing mapping
       includedTypes = typeMapping[preferences.type];
@@ -113,39 +121,76 @@ export async function handleLocations(req: any, res: any) {
       locations.length;
     const centroid = { lat: centerLat, lng: centerLng };
 
+    const FIELD_MASK =
+      "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.editorialSummary,places.photos,places.types,places.servesVegetarianFood,places.googleMapsUri,places.reviews";
+    let candidates: any = [];
+
     // Fetch Candidate Restaurants (Places API New)
     // We search near the centroid for the best candidates
-    const placesResponse = await axios.post(
-      `${ROUTES.THIRD_PARTY.SEARCH_NEARBY}`,
-      {
-        includedTypes: includedTypes,
-        maxResultCount: preferences?.type === "all" ? 20 : 10,
-        locationRestriction: {
-          circle: {
-            center: {
-              latitude: centroid.lat,
-              longitude: centroid.lng,
+    if (preferences?.type === "activities") {
+      const activityQuery =
+        "Escape rooms, Go karting, Paintball, Wonderla, Fun World, Bowling";
+
+      const response = await axios.post(
+        `https://places.googleapis.com/v1/places:searchText`,
+        {
+          textQuery: activityQuery,
+          locationBias: {
+            circle: {
+              center: { latitude: centroid.lat, longitude: centroid.lng },
+              radius: 10000.0, // Increased to 10km as activities are destinations worth traveling for
             },
-            radius: 3000.0,
+          },
+          maxResultCount: 15,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": GOOGLE_API_KEY,
+            "X-Goog-FieldMask": FIELD_MASK,
+          },
+        }
+      );
+      candidates = response.data.places || [];
+    } else {
+      const response = await axios.post(
+        `${ROUTES.THIRD_PARTY.SEARCH_NEARBY}`,
+        {
+          includedTypes: includedTypes,
+          maxResultCount: preferences?.type === "all" ? 20 : 10,
+          locationRestriction: {
+            circle: {
+              center: {
+                latitude: centroid.lat,
+                longitude: centroid.lng,
+              },
+              radius: preferences?.type === "all" ? 5000 : 3000,
+            },
           },
         },
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": GOOGLE_API_KEY,
-          "X-Goog-FieldMask":
-            "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.editorialSummary,places.photos,places.types,places.servesVegetarianFood,places.googleMapsUri,places.reviews",
-        },
-      }
-    );
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": GOOGLE_API_KEY,
+            "X-Goog-FieldMask":
+              "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.editorialSummary,places.photos,places.types,places.servesVegetarianFood,places.googleMapsUri,places.reviews",
+          },
+        }
+      );
+      candidates = response.data.places || [];
+    }
 
-    let candidates = placesResponse.data.places || [];
     if (!candidates || candidates.length === 0) {
       return res.json({
         message: "No places found near the center",
         center: centroid,
       });
+    }
+
+    if (candidates.length > 0) {
+      candidates = Array.from(
+        new Map(candidates.map((item: any) => [item.id, item])).values()
+      );
     }
 
     if (preferences?.isVeg) {
