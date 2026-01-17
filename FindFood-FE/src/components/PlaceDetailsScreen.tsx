@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,14 @@ import {
   StatusBar,
   Platform,
   Dimensions,
+  Share,
+  FlatList,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import API from '../api/routes';
 import { getPriceSymbol } from '../utils/commonUtils';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY || '';
 
@@ -22,10 +25,56 @@ export default function PlaceDetailScreen({ route }: any) {
   const { place } = route.params;
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const [activeIndex, setActiveIndex] = useState(0); // Track current page
+
+  useEffect(() => {
+    if (place.photos && place.photos.length > 1) {
+      // Skip the first one (already prefetched in ResultsScreen)
+      place.photos.slice(1, 5).forEach((photoName: string) => {
+        const url = getPhotoUrl(photoName);
+        Image.prefetch(url);
+      });
+    }
+  }, []);
+
+  // Calculate index based on scroll position
+  const handleScroll = (event: any) => {
+    const scrollOffset = event.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(scrollOffset / width);
+    setActiveIndex(currentIndex);
+  };
+
+  const onShare = async () => {
+    try {
+      const shareMessage =
+        `📍 *Let's meet at ${place.name}!*\n\n` +
+        `It's a ${place.fairnessScore}% fair match for the group.\n` +
+        `Avg. travel time: ${place.avgTravelTimeMinutes} mins.\n\n` +
+        `Check it out here: ${place.navigationUrl}`;
+
+      await Share.share({
+        message: shareMessage,
+        url: place.navigationUrl, // iOS uses this for the preview
+        title: `Meetup at ${place.name}`,
+      });
+    } catch (error: any) {
+      console.error(error.message);
+    }
+  };
 
   const getPhotoUrl = (photoName: string) => {
     return `${API.THIRD_PARTY.GOOGLE_PLACES_PHOTO}/${photoName}/media?key=${GOOGLE_API_KEY}&maxHeightPx=1000`;
   };
+
+  const renderHeroImage = ({ item }: { item: string }) => (
+    <View style={styles.imageContainer}>
+      <Image
+        source={{ uri: getPhotoUrl(item) }}
+        style={styles.heroImage}
+        fadeDuration={300}
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -50,21 +99,47 @@ export default function PlaceDetailScreen({ route }: any) {
           <Text style={styles.iconText}>←</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navigateAction}
-          onPress={() => Linking.openURL(place.navigationUrl)}
-        >
-          <Text style={styles.navigateActionText}>Navigate</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={[styles.circleButtonShare, styles.shareBtn]}
+            onPress={onShare}
+          >
+            <Ionicons name="share-social" size={24} color="black" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navigateAction}
+            onPress={() => Linking.openURL(place.navigationUrl)}
+          >
+            <Text style={styles.navigateActionText}>Navigate</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
         {/* 2. Hero Image with Overlaid Badges */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: getPhotoUrl(place.photos[0]) }}
-            style={styles.heroImage}
+        <View style={styles.carouselContainer}>
+          <FlatList
+            data={place.photos}
+            renderItem={renderHeroImage}
+            keyExtractor={item => item}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            bounces={false}
+            decelerationRate="fast"
           />
+
+          {/* 3. Pagination Dots Overlay */}
+          {place.photos.length > 1 && (
+            <View style={styles.paginationOverlay}>
+              <Text style={styles.photoCountText}>
+                {activeIndex + 1} / {place.photos.length}
+              </Text>
+            </View>
+          )}
           <View style={styles.badgeOverlay}>
             {place.isVeg && (
               <View style={[styles.pill, styles.vegPill]}>
@@ -181,10 +256,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  circleButtonShare: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
   iconText: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
   navigateAction: {
     backgroundColor: '#FFF',
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
     elevation: 5,
@@ -214,13 +312,13 @@ const styles = StyleSheet.create({
   // Image & Badges
   imageContainer: {
     width: width,
-    height: 450, // Slightly taller for more impact
+    height: 450,
     backgroundColor: '#000',
   },
-  heroImage: { width: '100%', height: '100%' },
+  heroImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   badgeOverlay: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 40,
     left: 20,
     flexDirection: 'row',
     gap: 10,
@@ -249,12 +347,11 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 12, fontWeight: '700', color: '#000' },
 
-  // Content Card (Pulls up over the image slightly)
   contentCard: {
     backgroundColor: '#FFF',
     borderTopLeftRadius: 35,
     borderTopRightRadius: 35,
-    marginTop: -25,
+    marginTop: -30,
     padding: 24,
     minHeight: 600,
   },
@@ -277,7 +374,7 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 14,
-    color: '#8E8E93', // Subtle grey for the dot and symbols
+    color: '#8E8E93',
     fontWeight: '600',
     marginLeft: 4,
   },
@@ -367,4 +464,32 @@ const styles = StyleSheet.create({
   reviewBody: { fontSize: 14, color: '#3A3A3C', lineHeight: 20 },
   vegPill: { borderColor: '#4CAF50' },
   nonVegPill: { borderColor: '#E53935' },
+  shareBtn: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  carouselContainer: {
+    width: width,
+    height: 450,
+    backgroundColor: '#000',
+  },
+  paginationOverlay: {
+    position: 'absolute',
+    bottom: 40,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  photoCountText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });
