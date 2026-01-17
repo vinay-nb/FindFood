@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import API from '../api/routes';
 import { useNavigation } from '@react-navigation/native';
 import { getPriceSymbol } from '../utils/commonUtils';
-import { Feather } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Enable LayoutAnimation for Android
 if (
@@ -85,13 +85,20 @@ export default function ResultsScreen({ route }: any) {
   };
 
   const navigateToDetails = (item: Details) => {
+    const highResPhotoUrl = `${API?.THIRD_PARTY?.GOOGLE_PLACES_PHOTO}/${item.photos[0]}/media?key=${GOOGLE_API_KEY}&maxHeightPx=1000`;
+
+    if (item.photos?.length > 0) {
+      Image.prefetch(highResPhotoUrl).catch(err =>
+        console.log('Prefetch failed', err),
+      );
+    }
     navigation.navigate('PlaceDetail', { place: item });
   };
 
   const getPhotoUrl = (photoName: string) => {
     if (!photoName) return null;
 
-    return `${API?.THIRD_PARTY?.GOOGLE_PLACES_PHOTO}/${photoName}/media?key=${GOOGLE_API_KEY}&maxHeightPx=800`;
+    return `${API?.THIRD_PARTY?.GOOGLE_PLACES_PHOTO}/${photoName}/media?key=${GOOGLE_API_KEY}&maxHeightPx=1000`;
   };
 
   const onShare = async (item: Details) => {
@@ -237,7 +244,7 @@ export default function ResultsScreen({ route }: any) {
                   style={styles.transparentShareBtn}
                   onPress={() => onShare(item)}
                 >
-                  <Feather name="send" size={20} color="#1C1C1E" />
+                  <Ionicons name="share-social" size={24} color="black" />
                 </TouchableOpacity>
                 {/* NAVIGATE BUTTON */}
                 <TouchableOpacity
@@ -324,16 +331,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
-  backIcon: { fontSize: 22, color: '#1C1C1E', fontWeight: '600' },
+  backIcon: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
   headerTitleText: {
     fontSize: 17,
     fontWeight: '700',
@@ -525,10 +527,10 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: 'transparent', 
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#E5E5EA', 
+    borderColor: '#E5E5EA',
   },
 });
