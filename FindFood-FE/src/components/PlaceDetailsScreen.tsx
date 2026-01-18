@@ -78,8 +78,6 @@ export default function PlaceDetailScreen({ route }: any) {
 
   return (
     <View style={styles.container}>
-      {/* <StatusBar barStyle="light-content" /> */}
-
       {/* 1. Floating Top Header (Immediate Action) */}
       <View
         style={[
