@@ -41,8 +41,6 @@ export default {
           isAndroidBackgroundLocationEnabled: false,
         },
       ],
-      // Use the direct path to the plugin
-      ['./node_modules/react-native-maps/app.plugin.js', { googleMaps: true }],
     ],
   },
 };
