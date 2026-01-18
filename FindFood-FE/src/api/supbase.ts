@@ -2,9 +2,10 @@ import 'react-native-url-polyfill/auto'; // Essential for mobile networking
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
+import Config from '@/config';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseUrl = Config.supabaseUrl || '';
+const supabaseAnonKey = Config.annonKey || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

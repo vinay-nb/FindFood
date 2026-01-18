@@ -58,7 +58,7 @@ function getStandardDeviation(numbers: number[]): number {
   if (n < 2) return 0;
   const avg = numbers.reduce((a, b) => a + b) / n;
   return Math.sqrt(
-    numbers.map((x) => Math.pow(x - avg, 2)).reduce((a, b) => a + b) / n
+    numbers.map((x) => Math.pow(x - avg, 2)).reduce((a, b) => a + b) / n,
   );
 }
 
@@ -149,7 +149,7 @@ export async function handleLocations(req: any, res: any) {
             "X-Goog-Api-Key": GOOGLE_API_KEY,
             "X-Goog-FieldMask": FIELD_MASK,
           },
-        }
+        },
       );
       candidates = response.data.places || [];
     } else {
@@ -175,7 +175,7 @@ export async function handleLocations(req: any, res: any) {
             "X-Goog-FieldMask":
               "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.editorialSummary,places.photos,places.types,places.servesVegetarianFood,places.googleMapsUri,places.reviews",
           },
-        }
+        },
       );
       candidates = response.data.places || [];
     }
@@ -189,7 +189,7 @@ export async function handleLocations(req: any, res: any) {
 
     if (candidates.length > 0) {
       candidates = Array.from(
-        new Map(candidates.map((item: any) => [item.id, item])).values()
+        new Map(candidates.map((item: any) => [item.id, item])).values(),
       );
     }
 
@@ -230,7 +230,7 @@ export async function handleLocations(req: any, res: any) {
           "X-Goog-FieldMask":
             "originIndex,destinationIndex,duration,distanceMeters,status,condition",
         },
-      }
+      },
     );
 
     // Step D: Apply the Fairness Logic with Enriched Data
@@ -260,7 +260,7 @@ export async function handleLocations(req: any, res: any) {
         const stdDev = getStandardDeviation(travelTimes);
 
         const isFoodPlace = place.types.some((t: string) =>
-          FOOD_CATEGORIES.includes(t)
+          FOOD_CATEGORIES.includes(t),
         );
 
         // fallback
@@ -333,6 +333,7 @@ export async function handleLocations(req: any, res: any) {
     } else {
       console.error("Backend Error:", err.message);
     }
+    console.error("DEBUG ERROR:", err.response?.data || err.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }

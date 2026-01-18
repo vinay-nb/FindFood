@@ -26,7 +26,15 @@ export default function AuthScreen({ navigation, route }: Props) {
     try {
       await authService.signInWithGoogle();
       // If login success, go back to finish the "Find Best Spots" action
-      navigation.goBack();
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        // If Auth was the root, reset to the main screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }], // Ensure 'Home' matches your route name
+        });
+      }
     } catch (error) {
       throw new Error('Something went wrong with Google Login.');
     } finally {
@@ -82,7 +90,13 @@ export default function AuthScreen({ navigation, route }: Props) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('Home'); // Fallback
+              }
+            }}
             style={styles.maybeLater}
           >
             <Text style={styles.maybeLaterText}>Maybe later</Text>

@@ -18,8 +18,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import API from '../api/routes';
 import { getPriceSymbol } from '../utils/commonUtils';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Config from '@/config';
 
-const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY || '';
+const GOOGLE_API_KEY = Config.googleApiKey || '';
 
 export default function PlaceDetailScreen({ route }: any) {
   const { place } = route.params;

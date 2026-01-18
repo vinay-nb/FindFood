@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import locationsRouter from "./api/routes/locations";
 import { ROUTES } from "./api/routes";
 import { authenticate } from "./api/middlewares/authMiddleWare";
+import cors from "cors";
 
 declare const process: any;
 
@@ -10,6 +11,12 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+app.use(
+  cors({
+    origin: "*",
+  }),
+);
 
 app.use(express.json());
 
