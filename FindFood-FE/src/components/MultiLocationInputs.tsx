@@ -56,6 +56,72 @@ export default function MultiLocationInputs() {
     isVeg: false,
   });
 
+  // AUTO-DETECT LOCATION FOR PERSON 1
+  const detectFirstPerson = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') return;
+
+    let location = await Location.getCurrentPositionAsync({});
+    const address = await Location.reverseGeocodeAsync(location.coords);
+    const name =
+      address.length > 0
+        ? `${address[0].name || address[0].street}`
+        : 'Current Location';
+
+    // Set the first item to current location automatically
+    setLocations(prev => {
+      const newLocs = [...prev];
+      newLocs[0] = {
+        ...newLocs[0],
+        data: {
+          name,
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+        },
+      };
+      return newLocs;
+    });
+  };
+
+  useEffect(() => {
+    detectFirstPerson();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    // 1. Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      setSession(session);
+      setAuthLoading(false);
+
+      // If no session, redirect to Auth immediately
+      if (!session) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth' }],
+        });
+      }
+    });
+
+    // 2. Listen for auth changes (Login/Logout)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth' }],
+        });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigation]);
+
   useFocusEffect(
     useCallback(() => {
       const now = Date.now();
@@ -184,65 +250,7 @@ export default function MultiLocationInputs() {
     [locations, sendError, preferences],
   );
 
-  useEffect(() => {
-    // 1. Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthLoading(false);
-
-      // If no session, redirect to Auth immediately
-      if (!session) {
-        navigation.navigate('Auth');
-      }
-    });
-
-    // 2. Listen for auth changes (Login/Logout)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) {
-        navigation.navigate('Auth');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigation]);
-
-  useEffect(() => {
-    detectFirstPerson();
-  }, []);
-
-  // AUTO-DETECT LOCATION FOR PERSON 1
-  const detectFirstPerson = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return;
-
-    let location = await Location.getCurrentPositionAsync({});
-    const address = await Location.reverseGeocodeAsync(location.coords);
-    const name =
-      address.length > 0
-        ? `${address[0].name || address[0].street}`
-        : 'Current Location';
-
-    // Set the first item to current location automatically
-    setLocations(prev => {
-      const newLocs = [...prev];
-      newLocs[0] = {
-        ...newLocs[0],
-        data: {
-          name,
-          lat: location.coords.latitude,
-          lng: location.coords.longitude,
-        },
-      };
-      return newLocs;
-    });
-  };
-
-  if (authLoading) {
+  if (authLoading || !session) {
     return (
       <View style={[styles.container, { justifyContent: 'center' }]}>
         <ActivityIndicator size="large" color="#1C1C1E" />

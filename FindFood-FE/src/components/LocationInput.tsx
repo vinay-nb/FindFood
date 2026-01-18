@@ -11,6 +11,7 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import MapPickerModal from './mapPickerModal/MapPickerModal';
+import Config from '@/config';
 
 interface Props {
   placeholder: string;
@@ -135,7 +136,7 @@ const LocationInput: React.FC<Props> = ({
               lng: details.geometry.location.lng,
             });
         }}
-        query={{ key: process.env.EXPO_PUBLIC_GOOGLE_API_KEY, language: 'en' }}
+        query={{ key: Config.googleApiKey, language: 'en' }}
         renderHeaderComponent={renderHeader}
         textInputProps={{
           autoFocus,

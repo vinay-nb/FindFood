@@ -1,26 +1,40 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { supabase } from '../api/supbase';
+import * as Crypto from 'expo-crypto';
 
 export const authService = {
   signInWithGoogle: async () => {
     try {
-      // 1. Check if Google Play Services are available (Android only, ignored on iOS)
+      const randomBytes = await Crypto.getRandomBytesAsync(32);
+      const rawNonce = btoa(String.fromCharCode(...randomBytes))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/[=]/g, '');
+
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce,
+      );
+
       await GoogleSignin.hasPlayServices();
 
-      // 2. Trigger the native Google Login modal
-      const userInfo = await GoogleSignin.signIn();
+      // In v16+, this is the standard configuration
+      const userInfo = await GoogleSignin.signIn({
+        nonce: hashedNonce,
+      } as any);
 
-      // 3. Extract the ID Token
+      // v16 structure uses .data
       const idToken = userInfo.data?.idToken;
 
       if (!idToken) {
         throw new Error('No ID Token found from Google');
       }
 
-      // 4. Send the ID Token to Supabase to create/login the user
+      // Pass the token AND the nonce provided by the SDK
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token: idToken,
+        nonce: rawNonce,
       });
 
       if (error) throw error;

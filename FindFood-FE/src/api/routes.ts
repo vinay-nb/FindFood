@@ -1,6 +1,7 @@
+import Config from "@/config";
 
-const BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL
-  ? process.env.EXPO_PUBLIC_BACKEND_URL
+const BASE_URL = Config.apiUrl
+  ? Config.apiUrl
   : 'http://localhost:4444';
 
 export const API = {

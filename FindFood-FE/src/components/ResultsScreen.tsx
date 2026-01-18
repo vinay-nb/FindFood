@@ -18,6 +18,7 @@ import API from '../api/routes';
 import { useNavigation } from '@react-navigation/native';
 import { getPriceSymbol } from '../utils/commonUtils';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Config from '@/config';
 
 // Enable LayoutAnimation for Android
 if (
@@ -27,7 +28,7 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+const GOOGLE_API_KEY = Config.googleApiKey || '';
 
 interface Details {
   id: string;

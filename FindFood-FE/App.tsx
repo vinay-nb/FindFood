@@ -9,6 +9,7 @@ import PlaceDetailScreen from './src/components/PlaceDetailsScreen';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useEffect } from 'react';
 import AuthScreen from '@/components/GoogleSso';
+import Config from '@/config';
 
 const Stack = createStackNavigator();
 
@@ -17,8 +18,8 @@ function App() {
 
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId: process.env.EXPO_PUBLIC_WEB_GOOGLE_CLIENT_ID,
-      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_SSO_IOS_CLIENT_ID,
+      webClientId: Config.webClientId,
+      iosClientId: Config.googleSsoIosClientId,
       offlineAccess: true,
     });
   }, []);
