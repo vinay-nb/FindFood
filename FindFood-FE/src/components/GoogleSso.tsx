@@ -32,7 +32,7 @@ export default function AuthScreen({ navigation, route }: Props) {
         // If Auth was the root, reset to the main screen
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Home' }], // Ensure 'Home' matches your route name
+          routes: [{ name: 'Input' }], // Ensure 'Input' matches your route name
         });
       }
     } catch (error) {
@@ -94,7 +94,7 @@ export default function AuthScreen({ navigation, route }: Props) {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.navigate('Home'); // Fallback
+                navigation.navigate('Input'); // Fallback
               }
             }}
             style={styles.maybeLater}

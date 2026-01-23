@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,23 +12,23 @@ import {
   Platform,
   UIManager,
   Share,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import API from '../api/routes';
-import { useNavigation } from '@react-navigation/native';
-import { getPriceSymbol } from '../utils/commonUtils';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import Config from '@/config';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import API from "../api/routes";
+import { useNavigation } from "@react-navigation/native";
+import { getPriceSymbol } from "../utils/commonUtils";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import Config from "@/config";
 
 // Enable LayoutAnimation for Android
 if (
-  Platform.OS === 'android' &&
+  Platform.OS === "android" &&
   UIManager.setLayoutAnimationEnabledExperimental
 ) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const GOOGLE_API_KEY = Config.googleApiKey || '';
+const GOOGLE_API_KEY = Config.googleApiKey || "";
 
 interface Details {
   id: string;
@@ -73,13 +73,13 @@ export default function ResultsScreen({ route }: any) {
     const { lines } = event.nativeEvent;
     // If the text is more than 2 lines long, we enable the "Show More" button
     if (lines.length > 2 && !canExpandMap[id]) {
-      setCanExpandMap(prev => ({ ...prev, [id]: true }));
+      setCanExpandMap((prev) => ({ ...prev, [id]: true }));
     }
   };
 
   const toggleDescription = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedDescriptions(prev => ({
+    setExpandedDescriptions((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
@@ -89,11 +89,11 @@ export default function ResultsScreen({ route }: any) {
     const highResPhotoUrl = `${API?.THIRD_PARTY?.GOOGLE_PLACES_PHOTO}/${item.photos[0]}/media?key=${GOOGLE_API_KEY}&maxHeightPx=1000`;
 
     if (item.photos?.length > 0) {
-      Image.prefetch(highResPhotoUrl).catch(err =>
-        console.log('Prefetch failed', err),
+      Image.prefetch(highResPhotoUrl).catch((err) =>
+        console.log("Prefetch failed", err),
       );
     }
-    navigation.navigate('PlaceDetail', { place: item });
+    navigation.navigate("PlaceDetail", { place: item });
   };
 
   const getPhotoUrl = (photoName: string) => {
@@ -148,7 +148,7 @@ export default function ResultsScreen({ route }: any) {
               />
             ) : (
               <View style={[styles.coverImage, styles.placeholderImage]}>
-                <Text style={{ color: '#8E8E93' }}>📸 No Image Available</Text>
+                <Text style={{ color: "#8E8E93" }}>📸 No Image Available</Text>
               </View>
             )}
 
@@ -183,19 +183,19 @@ export default function ResultsScreen({ route }: any) {
               </Text>
               <View style={styles.ratingContainer}>
                 <Text style={styles.ratingText}>
-                  ★ {item.rating?.toFixed(1) ?? '4.0'}
+                  ★ {item.rating?.toFixed(1) ?? "4.0"}
                 </Text>
               </View>
             </View>
 
-            <Text style={styles.typeText}>{item.type?.replace('_', ' ')}</Text>
+            <Text style={styles.typeText}>{item.type?.replace("_", " ")}</Text>
 
             {/* Show full description if expanded, otherwise 2 lines */}
             <View style={styles.descriptionWrapper}>
               <Text
                 style={styles.description}
                 numberOfLines={expandedDescriptions[item.id] ? undefined : 2}
-                onTextLayout={e => handleTextLayout(item.id, e)} // Measure the text
+                onTextLayout={(e) => handleTextLayout(item.id, e)} // Measure the text
               >
                 {item.description}
               </Text>
@@ -207,7 +207,7 @@ export default function ResultsScreen({ route }: any) {
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Text style={styles.showMoreText}>
-                    {expandedDescriptions[item.id] ? 'Show less' : 'Read more'}
+                    {expandedDescriptions[item.id] ? "Show less" : "Read more"}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -221,7 +221,7 @@ export default function ResultsScreen({ route }: any) {
                     {
                       width: `${item.fairnessScore}%`,
                       backgroundColor:
-                        item.fairnessScore > 80 ? '#00C853' : '#FFD600',
+                        item.fairnessScore > 80 ? "#00C853" : "#FFD600",
                     },
                   ]}
                 />
@@ -270,7 +270,7 @@ export default function ResultsScreen({ route }: any) {
           styles.customHeader,
           {
             paddingTop:
-              Platform.OS === 'ios'
+              Platform.OS === "ios"
                 ? insets.top
                 : (StatusBar.currentHeight || 0) + 10,
           },
@@ -280,20 +280,20 @@ export default function ResultsScreen({ route }: any) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitleText}>Fairness Rankings</Text>
         <View style={{ width: 40 }} />
       </View>
       <FlatList
         data={recommendations}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         // Add top padding so the first card isn't hidden under the header
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingBottom: 40,
-          paddingTop: Platform.OS === 'ios' ? insets.top + 60 : 80,
+          paddingTop: Platform.OS === "ios" ? insets.top + 60 : 80,
         }}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={() => (
@@ -310,37 +310,37 @@ export default function ResultsScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FB' },
+  container: { flex: 1, backgroundColor: "#F8F9FB" },
 
   // Custom Header Styles
   customHeader: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     zIndex: 100,
-    backgroundColor: 'rgba(248, 249, 251, 0.9)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: "rgba(248, 249, 251, 0.9)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: "#E5E5EA",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
-  backIcon: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
   headerTitleText: {
     fontSize: 17,
-    fontWeight: '700',
-    color: '#1C1C1E',
+    fontWeight: "700",
+    color: "#1C1C1E",
   },
 
   // List Typography
@@ -349,189 +349,189 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     fontSize: 28,
-    fontWeight: '800',
-    color: '#1C1C1E',
+    fontWeight: "800",
+    color: "#1C1C1E",
   },
   subtitle: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: "#8E8E93",
     marginTop: 4,
   },
 
-  title: { fontSize: 28, fontWeight: '800', color: '#1C1C1E' },
+  title: { fontSize: 28, fontWeight: "800", color: "#1C1C1E" },
 
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderRadius: 24,
     marginBottom: 20,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: "#E5E5EA",
     // Premium iOS Shadow
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   },
-  imageContainer: { width: '100%', height: 200 },
-  coverImage: { width: '100%', height: '100%' },
+  imageContainer: { width: "100%", height: 200 },
+  coverImage: { width: "100%", height: "100%" },
   placeholderImage: {
-    backgroundColor: '#F2F2F7',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F2F2F7",
+    justifyContent: "center",
+    alignItems: "center",
   },
   badgeOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     left: 12,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 6,
   },
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.95)",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
   },
-  vegPill: { borderColor: '#4CAF50' },
-  nonVegPill: { borderColor: '#E53935' },
-  pricePill: { borderColor: '#AEAEB2' },
+  vegPill: { borderColor: "#4CAF50" },
+  nonVegPill: { borderColor: "#E53935" },
+  pricePill: { borderColor: "#AEAEB2" },
   vegDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     marginRight: 6,
   },
   nonVegDot: {
     width: 8,
     height: 8,
     borderRadius: 1,
-    backgroundColor: '#E53935',
+    backgroundColor: "#E53935",
     marginRight: 6,
   }, // Square dot for non-veg
-  pillText: { fontSize: 11, fontWeight: '700', color: '#1C1C1E' },
+  pillText: { fontSize: 11, fontWeight: "700", color: "#1C1C1E" },
   content: { padding: 18 },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  name: { fontSize: 20, fontWeight: '700', color: '#1C1C1E', flex: 1 },
+  name: { fontSize: 20, fontWeight: "700", color: "#1C1C1E", flex: 1 },
   ratingContainer: {
-    backgroundColor: '#FF9500',
+    backgroundColor: "#FF9500",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  ratingText: { fontSize: 14, fontWeight: 'bold', color: '#FFF' },
+  ratingText: { fontSize: 14, fontWeight: "bold", color: "#FFF" },
   typeText: {
     fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    color: "#007AFF",
+    fontWeight: "700",
+    textTransform: "uppercase",
     marginTop: 4,
   },
   description: {
     fontSize: 14,
-    color: '#444',
+    color: "#444",
     lineHeight: 20,
-    textAlign: 'justify',
+    textAlign: "justify",
   },
   descriptionWrapper: {
     marginTop: 8,
   },
   showMoreText: {
-    color: '#007AFF',
-    fontWeight: '700',
+    color: "#007AFF",
+    fontWeight: "700",
     fontSize: 13,
     marginTop: 2,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
 
   expandedSection: { marginTop: 16 },
-  divider: { height: 1, backgroundColor: '#F2F2F7', marginBottom: 16 },
+  divider: { height: 1, backgroundColor: "#F2F2F7", marginBottom: 16 },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1C1C1E',
+    fontWeight: "700",
+    color: "#1C1C1E",
     marginBottom: 12,
   },
   reviewItem: {
     marginBottom: 12,
-    backgroundColor: '#F8F9FB',
+    backgroundColor: "#F8F9FB",
     padding: 12,
     borderRadius: 12,
   },
   reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 4,
   },
-  reviewAuthor: { fontSize: 13, fontWeight: '600', color: '#1C1C1E' },
-  reviewRating: { fontSize: 12, color: '#FF9500', fontWeight: '700' },
-  reviewText: { fontSize: 13, color: '#636366', fontStyle: 'italic' },
+  reviewAuthor: { fontSize: 13, fontWeight: "600", color: "#1C1C1E" },
+  reviewRating: { fontSize: 12, color: "#FF9500", fontWeight: "700" },
+  reviewText: { fontSize: 13, color: "#636366", fontStyle: "italic" },
   noDataText: {
     fontSize: 13,
-    color: '#8E8E93',
-    textAlign: 'center',
+    color: "#8E8E93",
+    textAlign: "center",
     marginVertical: 10,
   },
 
   fairnessContainer: { marginTop: 18 },
   fairnessBarBackground: {
     height: 6,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: "#E5E5EA",
     borderRadius: 3,
   },
-  fairnessBarFill: { height: '100%', borderRadius: 3 },
+  fairnessBarFill: { height: "100%", borderRadius: 3 },
   fairnessLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: "600",
+    color: "#8E8E93",
     marginTop: 8,
   },
 
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 20,
   },
-  timeBox: { flexDirection: 'column' },
+  timeBox: { flexDirection: "column" },
   timeLabel: {
     fontSize: 10,
-    color: '#8E8E93',
-    textTransform: 'uppercase',
+    color: "#8E8E93",
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  timeValue: { fontSize: 18, fontWeight: '700', color: '#1C1C1E' },
+  timeValue: { fontSize: 18, fontWeight: "700", color: "#1C1C1E" },
   actionButton: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   actionGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
-  actionText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
+  actionText: { color: "#FFF", fontWeight: "700", fontSize: 14 },
   transparentShareBtn: {
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1.5,
-    borderColor: '#E5E5EA',
+    borderColor: "#E5E5EA",
   },
 });

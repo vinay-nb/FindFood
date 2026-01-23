@@ -4,7 +4,7 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'react';
+} from "react";
 import {
   View,
   Text,
@@ -18,15 +18,15 @@ import {
   KeyboardAvoidingView,
   LayoutAnimation,
   Keyboard,
-} from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import LocationInput from './LocationInput';
-import { supabase } from '../api/supbase';
-import API from '../api/routes';
-import { Session } from '@supabase/supabase-js';
-import * as Location from 'expo-location';
-import { categories } from '@/utils/commonUtils';
+} from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LocationInput from "./LocationInput";
+import { supabase } from "../api/supbase";
+import API from "../api/routes";
+import { Session } from "@supabase/supabase-js";
+import * as Location from "expo-location";
+import { categories } from "@/utils/commonUtils";
 
 type Location = {
   name: string;
@@ -52,24 +52,24 @@ export default function MultiLocationInputs() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [preferences, setPreferences] = useState({
-    type: 'all', // default
+    type: "all", // default
     isVeg: false,
   });
 
   // AUTO-DETECT LOCATION FOR PERSON 1
   const detectFirstPerson = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return;
+    if (status !== "granted") return;
 
     let location = await Location.getCurrentPositionAsync({});
     const address = await Location.reverseGeocodeAsync(location.coords);
     const name =
       address.length > 0
         ? `${address[0].name || address[0].street}`
-        : 'Current Location';
+        : "Current Location";
 
     // Set the first item to current location automatically
-    setLocations(prev => {
+    setLocations((prev) => {
       const newLocs = [...prev];
       newLocs[0] = {
         ...newLocs[0],
@@ -94,33 +94,33 @@ export default function MultiLocationInputs() {
       if (!mounted) return;
       setSession(session);
       setAuthLoading(false);
-
-      // If no session, redirect to Auth immediately
-      if (!session) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Auth' }],
-        });
-      }
     });
 
     // 2. Listen for auth changes (Login/Logout)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       setSession(session);
-      if (!session) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Auth' }],
-        });
-      }
     });
 
+    const timer = setTimeout(() => {
+      if (authLoading) setAuthLoading(false);
+    }, 5000);
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
+      clearTimeout(timer);
     };
   }, [navigation]);
+
+  useEffect(() => {
+    // If we just logged in and we have enough locations, trigger the search
+    if (session && locations.filter((l) => l.data).length >= 2) {
+      sendLocationsToBackend();
+    }
+  }, [session]);
 
   useFocusEffect(
     useCallback(() => {
@@ -146,7 +146,7 @@ export default function MultiLocationInputs() {
           horizontal
           data={categories}
           showsHorizontalScrollIndicator={false}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.filterList}
           renderItem={({ item }) => {
             const isActive = preferences.type === item.id;
@@ -161,10 +161,10 @@ export default function MultiLocationInputs() {
                   LayoutAnimation.configureNext(
                     LayoutAnimation.Presets.easeInEaseOut,
                   );
-                  setPreferences(prev => ({ ...prev, type: item.id }));
+                  setPreferences((prev) => ({ ...prev, type: item.id }));
                 }}
               >
-                <Text style={styles.chipEmoji}>{item.emoji || '📍'}</Text>
+                <Text style={styles.chipEmoji}>{item.emoji || "📍"}</Text>
                 <Text
                   style={[
                     styles.premiumChipText,
@@ -179,7 +179,7 @@ export default function MultiLocationInputs() {
         />
 
         {/* --- NEW: DIETARY TOGGLE (Visible only for food/cafes) --- */}
-        {(preferences.type === 'restaurant' || preferences.type === 'cafe') && (
+        {(preferences.type === "restaurant" || preferences.type === "cafe") && (
           <TouchableOpacity
             activeOpacity={0.7}
             style={styles.vegToggle}
@@ -187,7 +187,7 @@ export default function MultiLocationInputs() {
               LayoutAnimation.configureNext(
                 LayoutAnimation.Presets.easeInEaseOut,
               );
-              setPreferences(prev => ({ ...prev, isVeg: !prev.isVeg }));
+              setPreferences((prev) => ({ ...prev, isVeg: !prev.isVeg }));
             }}
           >
             <View
@@ -207,7 +207,13 @@ export default function MultiLocationInputs() {
         {locations.map((loc, index) => (
           <View
             key={loc.id}
-            style={[styles.inputRow, { zIndex: locations.length - index }]}
+            style={[
+              styles.inputRow,
+              {
+                zIndex: locations.length - index,
+                elevation: locations.length - index,
+              },
+            ]}
           >
             <View
               style={[
@@ -217,10 +223,10 @@ export default function MultiLocationInputs() {
             >
               <LocationInput
                 value={loc.data?.name}
+                isSelected={!!loc.data}
                 placeholder={`Where is person ${index + 1}?`}
-                onSelect={value => updateLocationAt(loc.id, value)}
+                onSelect={(value) => updateLocationAt(loc.id, value)}
               />
-              {loc.data && <Text style={styles.checkIcon}>✓</Text>}
             </View>
             {locations.length > 2 && (
               <TouchableOpacity
@@ -238,7 +244,7 @@ export default function MultiLocationInputs() {
             <Text style={styles.addBtnText}>+ Add another person</Text>
           </TouchableOpacity>
 
-          {locations.some(l => l.data) && (
+          {locations.some((l) => l.data) && (
             <TouchableOpacity onPress={resetForm} style={styles.resetBtn}>
               <Text style={styles.resetBtnText}>Clear All</Text>
             </TouchableOpacity>
@@ -250,18 +256,26 @@ export default function MultiLocationInputs() {
     [locations, sendError, preferences],
   );
 
-  if (authLoading || !session) {
+  if (authLoading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
+      <View style={[styles.container, { justifyContent: "center" }]}>
         <ActivityIndicator size="large" color="#1C1C1E" />
       </View>
     );
   }
 
-  if (!session) {
-    navigation.navigate('Auth');
-    return;
-  }
+  // if (authLoading || !session) {
+  //   return (
+  //     <View style={[styles.container, { justifyContent: "center" }]}>
+  //       <ActivityIndicator size="large" color="#1C1C1E" />
+  //     </View>
+  //   );
+  // }
+
+  // if (!session) {
+  //   navigation.navigate('Auth');
+  //   return;
+  // }
 
   function resetForm() {
     setLocations([
@@ -272,13 +286,13 @@ export default function MultiLocationInputs() {
   }
 
   function updateLocationAt(id: string, value: Location | null) {
-    setLocations(prev =>
-      prev.map(loc => (loc.id === id ? { ...loc, data: value } : loc)),
+    setLocations((prev) =>
+      prev.map((loc) => (loc.id === id ? { ...loc, data: value } : loc)),
     );
   }
 
   function addLocationInput() {
-    setLocations(prev => [
+    setLocations((prev) => [
       ...prev,
       { id: Math.random().toString(), data: null },
     ]);
@@ -286,20 +300,25 @@ export default function MultiLocationInputs() {
 
   function removeLocationInput(id: string) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setLocations(prev => prev.filter(loc => loc.id !== id));
+    setLocations((prev) => prev.filter((loc) => loc.id !== id));
   }
 
   async function sendLocationsToBackend() {
+    if (!session) {
+      // Save their current inputs to state/params and send to Auth
+      navigation.navigate("Auth", { pendingAction: "search" });
+      return;
+    }
     const coords = locations
-      .filter(loc => loc.data !== null)
-      .map(loc => ({
+      .filter((loc) => loc.data !== null)
+      .map((loc) => ({
         lat: loc.data!.lat,
         lng: loc.data!.lng,
       }));
 
     if (coords.length < 2) {
       setSendError(
-        'Please add at least 2 people locations, to find a midway spot.',
+        "Please add at least 2 people locations, to find a midway spot.",
       );
       return;
     }
@@ -309,10 +328,10 @@ export default function MultiLocationInputs() {
 
     try {
       const res = await fetch(API?.POST_LOCATION, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          authorization: `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({
           locations: coords,
@@ -325,15 +344,16 @@ export default function MultiLocationInputs() {
       const json = await res.json();
 
       if (!res.ok) {
-        setSendError(json?.error || 'Something went wrong');
+        setSendError(json?.error || "Something went wrong");
       } else {
         const validResults = json.recommendations.filter(
           (r: any) => r.totalScore !== Infinity,
         );
-        navigation.navigate('Results', { recommendations: validResults });
+        navigation.navigate("Results", { recommendations: validResults });
       }
     } catch (err: any) {
-      setSendError('Network error. Check your connection.');
+      console.log("Something went wrong!!", err);
+      setSendError("Network error. Check your connection.");
     } finally {
       setSending(false);
     }
@@ -347,7 +367,7 @@ export default function MultiLocationInputs() {
       <View style={styles.heroContainer}>
         <ImageBackground
           source={{
-            uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000',
+            uri: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000",
           }}
           style={styles.heroBackground}
         >
@@ -365,7 +385,7 @@ export default function MultiLocationInputs() {
 
       {/* 2. The Form (Now as a FlatList to prevent nesting errors) */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
         <FlatList
@@ -375,10 +395,9 @@ export default function MultiLocationInputs() {
           style={styles.inputCard}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled" // Critical for Google Places selection
+          keyboardShouldPersistTaps="always" // Critical for Google Places selection
           onScroll={() => Keyboard.dismiss()}
         />
-
         {/* 3. Bottom Action Bar */}
         <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
           <TouchableOpacity
@@ -401,173 +420,182 @@ export default function MultiLocationInputs() {
 const styles = StyleSheet.create({
   heroContainer: {
     height: 350,
+    zIndex: 0,
   },
-  container: { flex: 1, backgroundColor: '#FFF' },
-  heroBackground: { width: '100%', height: 350 },
+  container: { flex: 1, backgroundColor: "#FFF" },
+  heroBackground: { width: "100%", height: 350 },
   darkOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
   heroTextContainer: { paddingHorizontal: 24 },
   heroTitle: {
     fontSize: 42,
-    fontWeight: '900',
-    color: '#FFF',
+    fontWeight: "900",
+    color: "#FFF",
     letterSpacing: -1,
   },
   heroSubtitle: {
     fontSize: 18,
-    color: 'rgba(255,255,255,0.85)',
+    color: "rgba(255,255,255,0.85)",
     marginTop: 8,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
-  keyboardView: { flex: 1, marginTop: -60 },
+  keyboardView: { flex: 1, marginTop: -60, zIndex: 10, elevation: 10 },
   inputCard: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
+    marginTop: -40,
+    overflow: "visible",
   },
   inputCardContent: {
     paddingHorizontal: 24,
     paddingTop: 32,
-    paddingBottom: 100,
+    paddingBottom: 450,
+    backgroundColor: "#FFF",
   },
   scrollContent: { paddingTop: 32, paddingBottom: 20, flexGrow: 1 },
 
   inputWrapper: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
     paddingLeft: 0,
-    paddingRight: 12,
+    paddingRight: 0,
     height: 54,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#F2F2F7',
-    paddingHorizontal: 12,
-    overflow: 'visible',
+    borderColor: "#F2F2F7",
+    paddingHorizontal: 0,
+    overflow: "visible",
   },
   inputWrapperSuccess: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#4CAF50',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#4CAF50",
     borderWidth: 1.5,
-    shadowColor: '#4CAF50',
+    shadowColor: "#4CAF50",
     shadowOpacity: 0.15,
     shadowRadius: 10,
   },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   checkIcon: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   removeBtn: {
     marginLeft: 12,
     width: 36,
     height: 36,
-    backgroundColor: '#FFF1F0',
+    backgroundColor: "#FFF1F0",
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#FFCFCC',
+    borderColor: "#FFCFCC",
   },
 
-  removeBtnText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 14 },
+  removeBtnText: { color: "#FF3B30", fontWeight: "bold", fontSize: 14 },
 
-  addBtn: { paddingVertical: 12, alignItems: 'center' },
-  addBtnText: { color: '#007AFF', fontWeight: '600', fontSize: 16 },
+  addBtn: { paddingVertical: 12, alignItems: "center" },
+  addBtnText: { color: "#007AFF", fontWeight: "600", fontSize: 16 },
 
   actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 8,
   },
   resetBtn: {
     paddingVertical: 12,
   },
   resetBtnText: {
-    color: '#FF3B30',
-    fontWeight: '600',
+    color: "#FF3B30",
+    fontWeight: "600",
     fontSize: 14,
   },
 
-  footer: { paddingHorizontal: 24, backgroundColor: '#FFF' },
+  footer: {
+    paddingHorizontal: 24,
+    backgroundColor: "#FFF",
+    zIndex: 1,
+    elevation: 1,
+  },
   primaryBtn: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
     paddingVertical: 18,
     borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
-  primaryBtnText: { color: '#FFF', fontWeight: '700', fontSize: 18 },
+  primaryBtnText: { color: "#FFF", fontWeight: "700", fontSize: 18 },
   errorText: {
-    color: '#FF3B30',
+    color: "#FF3B30",
     marginTop: 12,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   filterChip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: "#F2F2F7",
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: "#E5E5EA",
   },
   filterChipActive: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
+    borderColor: "#1C1C1E",
   },
   filterText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: "600",
+    color: "#8E8E93",
   },
   filterTextActive: {
-    color: '#FFF',
+    color: "#FFF",
   },
   toggleCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#C7C7CC',
+    borderColor: "#C7C7CC",
     marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   toggleCircleActive: {
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
   },
   innerDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   chipEmoji: {
     fontSize: 16,
@@ -575,18 +603,18 @@ const styles = StyleSheet.create({
   },
   premiumChipText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#3A3A3C',
+    fontWeight: "600",
+    color: "#3A3A3C",
   },
   premiumChipTextActive: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 
   label: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
+    fontWeight: "700",
+    color: "#8E8E93",
+    textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 8,
   },
@@ -597,39 +625,39 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
   },
   premiumChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 25,
     marginRight: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 5,
     borderWidth: 1,
-    borderColor: '#F2F2F7',
+    borderColor: "#F2F2F7",
   },
   premiumChipActive: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#1C1C1E',
-    shadowColor: '#000',
+    backgroundColor: "#1C1C1E",
+    borderColor: "#1C1C1E",
+    shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     transform: [{ scale: 1.02 }],
   },
   vegToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
     marginBottom: 16,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   vegToggleText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#444',
+    fontWeight: "500",
+    color: "#444",
   },
 });

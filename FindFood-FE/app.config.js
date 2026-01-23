@@ -13,21 +13,21 @@ export default ({ config }) => {
 
   return {
     ...config,
-    name: 'FindFood',
-    slug: 'findfood',
-    version: '1.0.0',
+    name: "FindFood",
+    slug: "findfood",
+    version: "1.0.0",
     extra: {
       APP_ENV: appEnv,
       apiUrl:
-        appEnv === 'production'
+        appEnv === "production"
           ? process.env.EXPO_PROD_BACKEND_URL
           : process.env.EXPO_PUBLIC_BACKEND_URL,
       supabaseUrl:
-        appEnv === 'production'
+        appEnv === "production"
           ? process.env.EXPO_PROD_SUPABASE_URL
           : process.env.EXPO_PUBLIC_SUPABASE_URL,
       annonKey:
-        appEnv === 'production'
+        appEnv === "production"
           ? process.env.EXPO_PROD_SUPABASE_ANON_KEY
           : process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
       googleApiKey: process.env.EXPO_PUBLIC_GOOGLE_API_KEY,
@@ -35,25 +35,26 @@ export default ({ config }) => {
       googleSsoIosClientId: process.env.EXPO_PUBLIC_GOOGLE_SSO_IOS_CLIENT_ID,
     },
     ios: {
-      bundleIdentifier: 'org.reactjs.native.example.FindFood',
+      bundleIdentifier: "org.reactjs.native.example.FindFood",
       supportsTablet: true,
-      googleServicesFile: './GoogleService-Info.plist',
+      googleServicesFile: "./GoogleService-Info.plist",
       config: {
         googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_API_KEY,
       },
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
-          'This app uses your location to find the fairest midway meeting point for you and your friends.',
+          "This app uses your location to find the fairest midway meeting point for you and your friends.",
         NSLocationAlwaysUsageDescription:
-          'This app uses your location to find the fairest midway meeting point for you and your friends.',
+          "This app uses your location to find the fairest midway meeting point for you and your friends.",
       },
     },
     android: {
       permissions: [
-        'android.permission.ACCESS_COARSE_LOCATION',
-        'android.permission.ACCESS_FINE_LOCATION',
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
       ],
-      package: 'org.reactjs.xnative.example.FindFood',
+      usesCleartextTraffic: true,
+      package: "org.reactjs.xnative.example.FindFood",
       config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_API_KEY,
@@ -61,12 +62,12 @@ export default ({ config }) => {
       },
     },
     plugins: [
-      '@react-native-google-signin/google-signin',
+      "@react-native-google-signin/google-signin",
       [
-        'expo-location',
+        "expo-location",
         {
           locationAlwaysAndWhenInUsePermission:
-            'Allow FindFood to use your location...',
+            "Allow FindFood to use your location...",
           isAndroidBackgroundLocationEnabled: false,
         },
       ],
