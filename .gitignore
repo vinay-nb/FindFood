@@ -82,18 +82,18 @@ yarn-error.log
 .env.production
 .env
 # package locks
-/FindFood-FE/package-lock.json
-/FindFood-FE/yarn.lock
-/FindFood-BE/package-lock.json
-/FindFood-BE/yarn.lock
+/Middl-BE/package-lock.json
+/Middl-BE/yarn.lock
+/Middl-BE/package-lock.json
+/Middl-BE/yarn.lock
 
 #BE
 #build files
-/FindFood-BE/dist/
+/Middl-BE/dist/
 
 # Supabase
 # vscode settings
-FindFood-DB/.vscode/
+Middl-DB/.vscode/
 # Supabase
 .branches
 .temp
@@ -108,14 +108,16 @@ FindFood-DB/.vscode/
 
 .bundle/*
 
-/FindFood-FE/GoogleService-Info.plist
-/FindFood-FE/google-services.json
-/FindFood-FE/iso/Podfile.lock
-/FindFood-FE/iso/Podfile
+/Middl-FE/GoogleService-Info.plist
+/Middl-FE/google-services.json
+/Middl-FE/iso/Podfile.lock
+/Middl-FE/iso/Podfile
+/Middl-FE/package-lock.json
+
 
 # Supabase runtime - DO NOT COMMIT THESE
-/FindFood-DB/supabase/.temp/
-/FindFood-DB/supabase/.branches/
-/FindFood-DB/supabase/.storage/
+/Middl-DB/supabase/.temp/
+/Middl-DB/supabase/.branches/
+/Middl-DB/supabase/.storage/
 
-/FindFood-Fe/android/build.gradle
+/Middl-FE/android/build.gradle

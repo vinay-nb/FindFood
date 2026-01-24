@@ -27,6 +27,7 @@ import API from "../api/routes";
 import { Session } from "@supabase/supabase-js";
 import * as Location from "expo-location";
 import { categories } from "@/utils/commonUtils";
+import heroImage from "../../assets/hero-bg.avif";
 
 type Location = {
   name: string;
@@ -366,16 +367,15 @@ export default function MultiLocationInputs() {
       {/* 1. Immersive Hero Background */}
       <View style={styles.heroContainer}>
         <ImageBackground
-          source={{
-            uri: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000",
-          }}
+          source={heroImage}
           style={styles.heroBackground}
+          onError={(e) => console.log("Image Load Error:", e.nativeEvent.error)}
         >
           <View style={styles.darkOverlay} />
           <View
             style={[styles.heroTextContainer, { paddingTop: insets.top + 40 }]}
           >
-            <Text style={styles.heroTitle}>Meet Midway</Text>
+            <Text style={styles.heroTitle}>Middl</Text>
             <Text style={styles.heroSubtitle}>
               Find the fairest spot for the whole group
             </Text>
@@ -452,12 +452,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    marginTop: -40,
+    marginTop: -30,
     overflow: "visible",
   },
   inputCardContent: {
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 20,
     paddingBottom: 450,
     backgroundColor: "#FFF",
   },

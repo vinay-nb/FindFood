@@ -1,21 +1,29 @@
-import path from 'path';
-import dotenv from 'dotenv';
+import path from "path";
+import dotenv from "dotenv";
 
 // 1. Determine which file to load
-const appEnv = process.env.APP_ENV || 'dev';
-const envFile = appEnv === 'production' ? '.env.production' : '.env.dev';
+const appEnv = process.env.APP_ENV || "dev";
+const envFile = appEnv === "production" ? ".env.production" : ".env.dev";
 
 // 2. Manually load the specific file
 dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
 export default ({ config }) => {
-  const appEnv = process.env.APP_ENV || 'dev';
+  const appEnv = process.env.APP_ENV || "dev";
 
   return {
     ...config,
-    name: "FindFood",
-    slug: "findfood",
+    name: "Middl",
+    slug: "Middl",
     version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/meet-midway-icon.png",
+
+    splash: {
+      image: "./assets/meet-midway-splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#ffffff",
+    },
     extra: {
       APP_ENV: appEnv,
       apiUrl:
@@ -35,7 +43,7 @@ export default ({ config }) => {
       googleSsoIosClientId: process.env.EXPO_PUBLIC_GOOGLE_SSO_IOS_CLIENT_ID,
     },
     ios: {
-      bundleIdentifier: "org.reactjs.native.example.FindFood",
+      bundleIdentifier: "com.middl.app",
       supportsTablet: true,
       googleServicesFile: "./GoogleService-Info.plist",
       config: {
@@ -54,7 +62,12 @@ export default ({ config }) => {
         "android.permission.ACCESS_FINE_LOCATION",
       ],
       usesCleartextTraffic: true,
-      package: "org.reactjs.xnative.example.FindFood",
+      package: "com.middl.app",
+      googleServicesFile: "./google-services.json",
+      adaptiveIcon: {
+        foregroundImage: "./assets/meet-midway-icon.png",
+        backgroundColor: "#FFFFFF",
+      },
       config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_API_KEY,

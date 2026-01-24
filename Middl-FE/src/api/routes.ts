@@ -1,4 +1,3 @@
-import Config from "@/config";
 import { Platform } from "react-native";
 
 const BASE_URL =

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StatusBar,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { authService } from '../services/authService';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { authService } from "../services/authService";
+import heroImage from "../../assets/hero-bg.avif";
 
 interface Props {
   navigation: any;
@@ -32,11 +33,11 @@ export default function AuthScreen({ navigation, route }: Props) {
         // If Auth was the root, reset to the main screen
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Input' }], // Ensure 'Input' matches your route name
+          routes: [{ name: "Input" }], // Ensure 'Input' matches your route name
         });
       }
     } catch (error) {
-      throw new Error('Something went wrong with Google Login.');
+      throw new Error("Something went wrong with Google Login.");
     } finally {
       setLoading(false);
     }
@@ -49,10 +50,9 @@ export default function AuthScreen({ navigation, route }: Props) {
       {/* Hero Section */}
       <View style={styles.heroContainer}>
         <ImageBackground
-          source={{
-            uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000',
-          }}
+          source={heroImage}
           style={styles.heroBackground}
+          onError={(e) => console.log("Image Load Error:", e.nativeEvent.error)}
         >
           <View style={styles.darkOverlay} />
           <View
@@ -94,7 +94,7 @@ export default function AuthScreen({ navigation, route }: Props) {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.navigate('Input'); // Fallback
+                navigation.navigate("Input"); // Fallback
               }
             }}
             style={styles.maybeLater}
@@ -108,54 +108,54 @@ export default function AuthScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
+  container: { flex: 1, backgroundColor: "#FFF" },
   heroContainer: { height: 400 },
-  heroBackground: { width: '100%', height: 400 },
+  heroBackground: { width: "100%", height: 400 },
   darkOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   heroTextContainer: { paddingHorizontal: 24 },
   heroTitle: {
     fontSize: 42,
-    fontWeight: '900',
-    color: '#FFF',
+    fontWeight: "900",
+    color: "#FFF",
     letterSpacing: -1,
   },
-  heroSubtitle: { fontSize: 18, color: 'rgba(255,255,255,0.85)', marginTop: 8 },
+  heroSubtitle: { fontSize: 18, color: "rgba(255,255,255,0.85)", marginTop: 8 },
 
   loginCard: {
     flex: 1,
     marginTop: -50,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
   },
-  content: { marginTop: 20, alignItems: 'center' },
+  content: { marginTop: 20, alignItems: "center" },
   description: {
     fontSize: 16,
-    color: '#636366',
-    textAlign: 'center',
+    color: "#636366",
+    textAlign: "center",
     lineHeight: 24,
     marginBottom: 40,
   },
   googleBtn: {
-    width: '100%',
-    backgroundColor: '#FFF',
+    width: "100%",
+    backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: "#E5E5EA",
     paddingVertical: 16,
     borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
-  googleBtnText: { color: '#000', fontWeight: '700', fontSize: 17 },
+  googleBtnText: { color: "#000", fontWeight: "700", fontSize: 17 },
   maybeLater: { marginTop: 20 },
-  maybeLaterText: { color: '#8E8E93', fontWeight: '600' },
-  btnContent: { flexDirection: 'row', alignItems: 'center' },
+  maybeLaterText: { color: "#8E8E93", fontWeight: "600" },
+  btnContent: { flexDirection: "row", alignItems: "center" },
 });

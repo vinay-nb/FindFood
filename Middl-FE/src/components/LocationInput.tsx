@@ -154,6 +154,9 @@ const LocationInput: React.FC<Props> = ({
           ref={ref}
           placeholder={placeholder}
           fetchDetails={true}
+          onFail={(error) => {
+            console.error("DEBUG PLACES:", error);
+          }}
           onPress={(data, details = null) => {
             setIsOpen(false);
             if (details)
@@ -163,7 +166,8 @@ const LocationInput: React.FC<Props> = ({
                 lng: details.geometry.location.lng,
               });
           }}
-          query={{ key: Config.googleApiKey, language: "en" }}
+          query={{ key: Config.googleApiKey, language: "en", types: "geocode" }}
+          debounce={300}
           renderHeaderComponent={renderHeader}
           textInputProps={{
             autoFocus,
@@ -221,7 +225,7 @@ const LocationInput: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, position: "relative", width: "100%" },
+  container: { flex: 1, position: "relative", width: "100%", zIndex: 1 },
   input: {
     height: 54,
     fontSize: 16,
@@ -255,6 +259,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F2F2F7",
     backgroundColor: "#F9F9F9",
+    justifyContent: "space-around",
     // borderTopLeftRadius: 12,
     // borderTopRightRadius: 12,
   },
